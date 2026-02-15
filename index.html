@@ -15,7 +15,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
             position: relative;
             overflow-x: hidden;
         }
@@ -29,9 +29,9 @@
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
             animation: float 15s ease-in-out infinite;
             pointer-events: none;
             z-index: 0;
@@ -89,7 +89,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -98,21 +98,21 @@
         header {
             text-align: center;
             color: white;
-            margin-bottom: 40px;
+            margin-bottom: 25px;
             position: relative;
-            animation: fadeInDown 0.8s ease-out;
+            animation: fadeInDown 0.6s ease-out;
         }
 
         header h1, header p {
             cursor: pointer;
             transition: all 0.3s;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 8px;
             display: inline-block;
         }
 
         header h1:hover, header p:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             transform: scale(1.02);
         }
 
@@ -120,7 +120,7 @@
             background: rgba(255, 255, 255, 0.95);
             border: 2px solid #667eea;
             border-radius: 8px;
-            padding: 10px 16px;
+            padding: 8px 14px;
             font-size: inherit;
             font-weight: inherit;
             font-family: inherit;
@@ -137,7 +137,7 @@
         @keyframes fadeInDown {
             from {
                 opacity: 0;
-                transform: translateY(-30px);
+                transform: translateY(-20px);
             }
             to {
                 opacity: 1;
@@ -146,88 +146,89 @@
         }
 
         h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            text-shadow: 0 3px 15px rgba(0,0,0,0.25);
             background: linear-gradient(135deg, #ffffff 0%, #f0f0ff 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-weight: 800;
-            letter-spacing: 2px;
+            font-weight: 700;
+            letter-spacing: 1px;
         }
 
         header p {
-            font-size: 1.1em;
-            opacity: 0.95;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            letter-spacing: 1px;
+            font-size: 0.95em;
+            opacity: 0.9;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
         }
 
         /* 搜索框样式 */
         .search-container {
             max-width: 700px;
-            margin: 30px auto;
+            margin: 20px auto;
             position: relative;
         }
 
         .search-wrapper {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
+            padding: 10px 12px;
             border-radius: 50px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
             backdrop-filter: blur(10px);
             transition: all 0.3s;
         }
 
         .search-wrapper:hover {
-            box-shadow: 0 15px 50px rgba(102, 126, 234, 0.25);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
         }
 
         .search-wrapper:focus-within {
-            box-shadow: 0 15px 50px rgba(102, 126, 234, 0.35);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
             background: rgba(255, 255, 255, 1);
         }
 
         .search-engine-selector {
             display: flex;
             align-items: center;
-            gap: 5px;
-            padding: 0 15px;
+            gap: 4px;
+            padding: 0 12px;
             cursor: pointer;
-            border-right: 2px solid rgba(102, 126, 234, 0.2);
-            min-width: 100px;
+            border-right: 1.5px solid rgba(102, 126, 234, 0.15);
+            min-width: 90px;
             transition: all 0.3s;
         }
 
         .search-engine-selector:hover {
             background: rgba(102, 126, 234, 0.05);
-            border-radius: 25px;
+            border-radius: 20px;
         }
 
         .search-engine-icon {
-            font-size: 1.3em;
+            font-size: 1.1em;
         }
 
         .search-engine-name {
             font-weight: 600;
             color: #667eea;
-            font-size: 0.95em;
+            font-size: 0.9em;
         }
 
         .search-engine-arrow {
             color: #667eea;
             margin-left: auto;
+            font-size: 0.8em;
         }
 
         .search-input {
             flex: 1;
             border: none;
             outline: none;
-            font-size: 1.05em;
-            padding: 8px 15px;
+            font-size: 0.95em;
+            padding: 6px 12px;
             background: transparent;
             color: #2d3748;
         }
@@ -240,44 +241,44 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 10px 25px;
+            padding: 8px 20px;
             border-radius: 25px;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 0.9em;
             font-weight: 600;
             transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
         }
 
         .search-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
         }
 
         /* 搜索引擎下拉菜单 */
         .search-engines-dropdown {
             position: absolute;
-            top: 70px;
-            left: 15px;
+            top: 60px;
+            left: 12px;
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            padding: 8px;
             display: none;
             z-index: 1000;
-            min-width: 200px;
+            min-width: 180px;
         }
 
         .search-engines-dropdown.active {
             display: block;
-            animation: slideDown 0.3s ease-out;
+            animation: slideDown 0.25s ease-out;
         }
 
         @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateY(-10px);
+                transform: translateY(-8px);
             }
             to {
                 opacity: 1;
@@ -288,15 +289,15 @@
         .search-engine-option {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 15px;
+            gap: 10px;
+            padding: 10px 12px;
             cursor: pointer;
-            border-radius: 10px;
+            border-radius: 8px;
             transition: all 0.2s;
         }
 
         .search-engine-option:hover {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
             transform: translateX(5px);
         }
 
@@ -512,13 +513,13 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
             position: relative;
             overflow: hidden;
         }
@@ -531,19 +532,19 @@
             width: 0;
             height: 0;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.25);
             transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
+            transition: width 0.5s, height 0.5s;
         }
 
         .btn:active::after {
-            width: 300px;
-            height: 300px;
+            width: 250px;
+            height: 250px;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
         }
 
         .btn:active {
@@ -553,29 +554,29 @@
         .btn-delete {
             background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
             padding: 6px 12px;
-            font-size: 12px;
-            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+            font-size: 11px;
+            box-shadow: 0 3px 12px rgba(231, 76, 60, 0.25);
         }
 
         .btn-delete:hover {
-            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+            box-shadow: 0 5px 18px rgba(231, 76, 60, 0.35);
         }
 
         .btn-edit {
             background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             padding: 6px 12px;
-            font-size: 12px;
-            margin-right: 5px;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            font-size: 11px;
+            margin-right: 4px;
+            box-shadow: 0 3px 12px rgba(52, 152, 219, 0.25);
         }
 
         .btn-edit:hover {
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+            box-shadow: 0 5px 18px rgba(52, 152, 219, 0.35);
         }
 
         .btn-cancel {
             background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+            box-shadow: 0 3px 12px rgba(149, 165, 166, 0.25);
         }
 
         .btn-cancel:hover {
@@ -618,14 +619,14 @@
         .group {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
             position: relative;
             overflow: hidden;
-            animation: slideUp 0.6s ease-out backwards;
+            animation: slideUp 0.5s ease-out backwards;
         }
 
         .group::before {
@@ -634,10 +635,10 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
+            height: 3px;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             transform: scaleX(0);
-            transition: transform 0.4s;
+            transition: transform 0.3s;
         }
 
         .group:hover::before {
@@ -647,7 +648,7 @@
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -655,16 +656,16 @@
             }
         }
 
-        .group:nth-child(1) { animation-delay: 0.1s; }
-        .group:nth-child(2) { animation-delay: 0.2s; }
-        .group:nth-child(3) { animation-delay: 0.3s; }
-        .group:nth-child(4) { animation-delay: 0.4s; }
-        .group:nth-child(5) { animation-delay: 0.5s; }
+        .group:nth-child(1) { animation-delay: 0.05s; }
+        .group:nth-child(2) { animation-delay: 0.1s; }
+        .group:nth-child(3) { animation-delay: 0.15s; }
+        .group:nth-child(4) { animation-delay: 0.2s; }
+        .group:nth-child(5) { animation-delay: 0.25s; }
 
         .group:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 16px 48px rgba(102, 126, 234, 0.2);
-            border-color: rgba(102, 126, 234, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.15);
+            border-color: rgba(102, 126, 234, 0.25);
         }
 
         .group.dragging {
@@ -674,7 +675,7 @@
         }
 
         .group.drag-over {
-            border: 2px dashed #667eea;
+            border: 1.5px dashed #667eea;
             background: rgba(102, 126, 234, 0.05);
         }
 
@@ -682,21 +683,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1.5px solid rgba(102, 126, 234, 0.08);
             cursor: pointer;
             transition: all 0.3s;
         }
 
         .group-header:hover {
-            border-bottom-color: rgba(102, 126, 234, 0.3);
+            border-bottom-color: rgba(102, 126, 234, 0.2);
         }
 
         .group-title-wrapper {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             flex: 1;
         }
 
@@ -714,11 +715,11 @@
         }
 
         .collapse-icon {
-            font-size: 1.2em;
+            font-size: 1.1em;
             color: #667eea;
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             user-select: none;
-            filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
+            filter: drop-shadow(0 1px 3px rgba(102, 126, 234, 0.25));
         }
 
         .collapse-icon.collapsed {
@@ -726,14 +727,14 @@
         }
 
         .group-title {
-            font-size: 1.6em;
+            font-size: 1.35em;
             color: #2d3748;
             font-weight: 700;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .group-content {
@@ -750,21 +751,21 @@
 
         .group-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .links {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
         }
 
         .link-card {
             background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
-            padding: 18px;
-            border-radius: 14px;
-            border: 2px solid transparent;
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1.5px solid transparent;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             position: relative;
             cursor: move;
             overflow: hidden;
@@ -779,8 +780,8 @@
             bottom: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             opacity: 0;
-            transition: opacity 0.4s;
-            border-radius: 14px;
+            transition: opacity 0.3s;
+            border-radius: 12px;
         }
 
         .link-card > * {
@@ -790,8 +791,8 @@
 
         .link-card:hover {
             border-color: #667eea;
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.25);
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 28px rgba(102, 126, 234, 0.2);
         }
 
         .link-card:hover::before {
@@ -817,9 +818,9 @@
 
         .link-name {
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: #2d3748;
-            font-size: 15px;
+            font-size: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -828,22 +829,114 @@
         }
 
         .link-card:hover .link-name {
-            transform: translateX(3px);
+            transform: translateX(2px);
         }
 
         .link-url {
-            font-size: 12px;
+            font-size: 11px;
             color: #718096;
             word-break: break-all;
-            line-height: 1.5;
+            line-height: 1.4;
+        }
+
+        .link-stats {
+            display: flex;
+            gap: 6px;
+            margin-top: 7px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .click-count-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .last-visit-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: rgba(39, 174, 96, 0.08);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #27ae60;
+        }
+
+        /* 最近使用区域样式 */
+        .recent-section {
+            margin-bottom: 30px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .recent-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border-radius: 12px;
+            border-left: 3px solid #667eea;
+        }
+
+        .recent-header-icon {
+            font-size: 1.3em;
+        }
+
+        .recent-header-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .recent-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+        }
+
+        .recent-link-card {
+            position: relative;
+        }
+
+        .hot-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            box-shadow: 0 3px 10px rgba(255, 107, 107, 0.35);
+            z-index: 10;
+            animation: pulse-badge 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
 
         .link-actions {
-            margin-top: 12px;
+            margin-top: 10px;
             display: flex;
-            gap: 6px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(102, 126, 234, 0.1);
+            gap: 5px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(102, 126, 234, 0.08);
         }
 
         .modal {
@@ -1190,6 +1283,7 @@
                 data: null // base64 data or video URL
             },
             collapsedGroups: [], // 存储折叠的分组ID
+            linkStats: {}, // 存储每个链接的统计信息 { linkId: { clickCount: 0, lastVisit: timestamp } }
             siteTitle: '🤖 AI 网址导航',
             siteSubtitle: '你的个人AI工具收藏夹'
         };
@@ -1301,6 +1395,10 @@
                 if (!data.collapsedGroups) {
                     data.collapsedGroups = [];
                 }
+                // 确保链接统计存在
+                if (!data.linkStats) {
+                    data.linkStats = {};
+                }
                 // 确保标题存在
                 if (!data.siteTitle) {
                     data.siteTitle = '🤖 AI 网址导航';
@@ -1327,6 +1425,7 @@
                         data: null
                     },
                     collapsedGroups: [],
+                    linkStats: {},
                     siteTitle: '🤖 AI 网址导航',
                     siteSubtitle: '你的个人AI工具收藏夹'
                 };
@@ -1343,6 +1442,9 @@
         function renderGroups() {
             const container = document.getElementById('groupsContainer');
             container.innerHTML = '';
+
+            // 渲染最近使用区域
+            renderRecentLinks(container);
 
             // 按order排序，如果没有order则保持原顺序
             const sortedGroups = [...data.groups].sort((a, b) => {
@@ -1411,10 +1513,19 @@
             linkCard.className = 'link-card';
             linkCard.draggable = true;
             linkCard.dataset.linkId = link.id;
+            
+            // 获取统计信息
+            const stats = data.linkStats[link.id] || { clickCount: 0, lastVisit: null };
+            const lastVisitText = stats.lastVisit ? formatTimeAgo(stats.lastVisit) : '从未访问';
+            
             linkCard.innerHTML = `
-                <a href="${link.url}" target="_blank" onclick="event.stopPropagation()">
+                <a href="${link.url}" target="_blank" onclick="event.stopPropagation(); trackLinkClick(${link.id})">
                     <div class="link-name">${link.name}</div>
                     <div class="link-url">${link.url}</div>
+                    <div class="link-stats">
+                        <span class="click-count-badge">🔥 ${stats.clickCount} 次</span>
+                        <span class="last-visit-badge">⏰ ${lastVisitText}</span>
+                    </div>
                 </a>
                 <div class="link-actions">
                     <button class="btn btn-edit" onclick="openEditLinkModal(${link.id})">编辑</button>
@@ -1991,6 +2102,84 @@
 
             saveData();
             renderGroups(); // 重新渲染以更新空提示
+        }
+
+        // 记录链接点击
+        function trackLinkClick(linkId) {
+            if (!data.linkStats[linkId]) {
+                data.linkStats[linkId] = { clickCount: 0, lastVisit: null };
+            }
+            data.linkStats[linkId].clickCount++;
+            data.linkStats[linkId].lastVisit = Date.now();
+            saveData();
+        }
+
+        // 格式化时间
+        function formatTimeAgo(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return '刚刚';
+            if (minutes < 60) return `${minutes}分钟前`;
+            if (hours < 24) return `${hours}小时前`;
+            if (days < 7) return `${days}天前`;
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        // 渲染最近使用区域
+        function renderRecentLinks(container) {
+            // 获取有点击记录的链接
+            const linksWithStats = data.links
+                .filter(link => data.linkStats[link.id] && data.linkStats[link.id].clickCount > 0)
+                .map(link => ({
+                    ...link,
+                    stats: data.linkStats[link.id]
+                }))
+                .sort((a, b) => {
+                    // 按最后访问时间排序
+                    return b.stats.lastVisit - a.stats.lastVisit;
+                })
+                .slice(0, 6); // 只显示前6个
+
+            if (linksWithStats.length === 0) return;
+
+            const recentSection = document.createElement('div');
+            recentSection.className = 'recent-section group';
+            
+            recentSection.innerHTML = `
+                <div class="recent-header">
+                    <span class="recent-header-icon">⭐</span>
+                    <span class="recent-header-title">最近使用</span>
+                </div>
+                <div class="recent-links" id="recentLinksContainer"></div>
+            `;
+            
+            container.appendChild(recentSection);
+            
+            const recentLinksContainer = document.getElementById('recentLinksContainer');
+            linksWithStats.forEach((link, index) => {
+                const linkCard = document.createElement('div');
+                linkCard.className = 'link-card recent-link-card';
+                
+                const isHot = link.stats.clickCount >= 5;
+                const lastVisitText = formatTimeAgo(link.stats.lastVisit);
+                
+                linkCard.innerHTML = `
+                    ${isHot ? '<div class="hot-badge">🔥 HOT</div>' : ''}
+                    <a href="${link.url}" target="_blank" onclick="trackLinkClick(${link.id})">
+                        <div class="link-name">${link.name}</div>
+                        <div class="link-url">${link.url}</div>
+                        <div class="link-stats">
+                            <span class="click-count-badge">🔥 ${link.stats.clickCount} 次</span>
+                            <span class="last-visit-badge">⏰ ${lastVisitText}</span>
+                        </div>
+                    </a>
+                `;
+                recentLinksContainer.appendChild(linkCard);
+            });
         }
 
         // 页面加载时初始化
