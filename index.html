@@ -15,7 +15,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 15px;
+            padding: 30px;
             position: relative;
             overflow-x: hidden;
         }
@@ -91,10 +91,10 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            margin-left: 220px;
+            margin-left: 270px;
             position: relative;
             z-index: 1;
-            padding-right: 15px;
+            padding-right: 30px;
         }
 
         /* 排序控制面板 - 紧凑版 */
@@ -178,19 +178,19 @@
         /* 侧边栏样式 */
         .sidebar {
             position: fixed;
-            left: 10px;
-            top: 10px;
+            left: 30px;
+            top: 30px;
             width: 200px;
-            height: calc(100vh - 20px);
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            height: calc(100vh - 60px);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
             z-index: 100;
             overflow-y: auto;
-            padding: 15px 10px 150px 10px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 25px 15px 150px 15px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
         }
 
         .sidebar::before {
@@ -261,8 +261,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
-            padding-bottom: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
             border-bottom: 1px solid rgba(102, 126, 234, 0.08);
         }
 
@@ -299,15 +299,15 @@
         .sidebar-groups {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             position: relative;
             z-index: 1;
         }
 
         .sidebar-group {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-            padding: 8px 10px;
-            border-radius: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
             border-left: 2px solid transparent;
             cursor: pointer;
             transition: all 0.25s;
@@ -385,19 +385,29 @@
             
             .container {
                 margin-left: 0;
-                padding: 0 20px;
+                padding: 0 30px;
             }
 
             .recent-section {
-                left: 10px;
-                right: 10px;
+                left: 30px;
+                right: 30px;
+            }
+
+            body {
+                padding: 20px;
+            }
+
+            .settings-toggle {
+                top: 30px;
+                right: 30px;
             }
         }
 
         header {
             text-align: center;
             color: white;
-            margin-bottom: 25px;
+            margin-bottom: 40px;
+            margin-top: 20px;
             position: relative;
             animation: fadeInDown 0.6s ease-out;
         }
@@ -466,7 +476,7 @@
         /* 搜索框样式 */
         .search-container {
             max-width: 700px;
-            margin: 20px auto;
+            margin: 30px auto 40px auto;
             position: relative;
         }
 
@@ -615,17 +625,17 @@
 
         .settings-toggle {
             position: fixed;
-            top: 30px;
-            right: 30px;
+            top: 40px;
+            right: 40px;
             background: rgba(255, 255, 255, 0.95);
             color: #667eea;
             border: none;
-            width: 56px;
-            height: 56px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            font-size: 24px;
+            font-size: 26px;
             cursor: pointer;
-            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.35);
             transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             z-index: 1001;
             display: flex;
@@ -655,35 +665,44 @@
 
         .settings-panel {
             position: fixed;
-            top: 0;
-            right: -380px;
-            width: 380px;
-            height: 100vh;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+            top: 30px;
+            right: -420px;
+            width: 360px;
+            height: calc(100vh - 60px);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            box-shadow: -12px 0 50px rgba(0,0,0,0.15);
             transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             z-index: 1000;
             overflow-y: auto;
             padding: 100px 30px 30px 30px;
+            border-radius: 24px 0 0 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-right: none;
         }
 
         .settings-panel::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         .settings-panel::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
+            margin: 10px 0;
         }
 
         .settings-panel::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.5) 100%);
             border-radius: 10px;
         }
 
+        .settings-panel::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.7) 0%, rgba(118, 75, 162, 0.7) 100%);
+        }
+
         .settings-panel.active {
-            right: 0;
+            right: 30px;
         }
 
         .settings-overlay {
@@ -954,7 +973,7 @@
 
         .groups {
             display: grid;
-            gap: 18px;
+            gap: 24px;
             animation: fadeIn 0.8s ease-out;
             padding-bottom: 140px;
         }
@@ -1010,7 +1029,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 24px;
             animation: fadeIn 0.5s ease-out;
             gap: 15px;
             flex-wrap: wrap;
@@ -1044,7 +1063,7 @@
         .links-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 14px;
+            gap: 16px;
             animation: fadeIn 0.6s ease-out;
         }
 
@@ -1054,13 +1073,13 @@
         }
 
         .group {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 18px;
-            border-radius: 16px;
-            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
             transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
             position: relative;
             overflow: hidden;
             animation: slideUp 0.5s ease-out backwards;
@@ -1194,22 +1213,18 @@
         .links {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 14px;
+            gap: 16px;
         }
 
         .link-card {
             background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
-            padding: 14px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 14px;
             border: 1.5px solid transparent;
             transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             position: relative;
             cursor: move;
             overflow: hidden;
-        }
-
-        .link-card[draggable="false"] {
-            cursor: default;
         }
 
         .link-card::before {
@@ -1315,18 +1330,18 @@
         /* 最近使用区域样式 - 固定在底部 */
         .recent-section {
             position: fixed;
-            bottom: 10px;
-            left: 220px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            bottom: 30px;
+            left: 270px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
             z-index: 99;
-            padding: 10px 15px;
+            padding: 15px 20px;
             animation: slideUpFromBottom 0.5s ease-out;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
         }
 
         .recent-section::before {
@@ -1471,14 +1486,15 @@
         }
 
         .modal-content {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            padding: 35px;
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            padding: 40px;
+            border-radius: 24px;
             width: 90%;
-            max-width: 520px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            max-width: 540px;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.3);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
             animation: slideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             position: relative;
             overflow: hidden;
@@ -1492,6 +1508,24 @@
             right: 0;
             height: 5px;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* 在模态框内容上添加白色半透明背景 */
+        .modal-content::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 0;
+            border-radius: 0 0 24px 24px;
+        }
+
+        .modal-content > * {
+            position: relative;
+            z-index: 1;
         }
 
         @keyframes slideIn {
@@ -1517,12 +1551,12 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             color: #4a5568;
             font-weight: 600;
             font-size: 14px;
@@ -1532,11 +1566,12 @@
         .form-group select {
             width: 100%;
             padding: 14px 16px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid rgba(226, 232, 240, 0.6);
             border-radius: 12px;
             font-size: 15px;
             transition: all 0.3s;
-            background: #f7fafc;
+            background: rgba(247, 250, 252, 0.8);
+            backdrop-filter: blur(10px);
         }
 
         .form-group input:focus,
@@ -1833,8 +1868,8 @@
             siteTitle: '🤖 AI 网址导航',
             siteSubtitle: '你的个人AI工具收藏夹',
             sortConfig: { // 排序配置
-                type: 'default', // 'default', 'name', 'clicks', 'recent'
-                order: 'desc' // 'asc' 或 'desc'
+                type: 'name', // 'name', 'clicks', 'recent'
+                order: 'asc' // 'asc' 或 'desc'
             }
         };
 
@@ -1969,7 +2004,7 @@
                 }
                 // 确保排序配置存在
                 if (!data.sortConfig) {
-                    data.sortConfig = { type: 'default', order: 'desc' };
+                    data.sortConfig = { type: 'name', order: 'asc' };
                 }
             } else {
                 // 默认数据
@@ -2029,9 +2064,6 @@
                         <span>排序:</span>
                     </div>
                     <div class="sort-buttons">
-                        <button class="sort-btn ${data.sortConfig.type === 'default' ? 'active' : ''}" data-sort="default" onclick="changeSortType('default')">
-                            📌 默认
-                        </button>
                         <button class="sort-btn ${data.sortConfig.type === 'name' ? 'active' : ''}" data-sort="name" onclick="changeSortType('name')">
                             🔤 名称
                         </button>
@@ -2116,9 +2148,6 @@
                         <span>排序:</span>
                     </div>
                     <div class="sort-buttons">
-                        <button class="sort-btn ${data.sortConfig.type === 'default' ? 'active' : ''}" data-sort="default" onclick="changeSortType('default')">
-                            📌 默认
-                        </button>
                         <button class="sort-btn ${data.sortConfig.type === 'name' ? 'active' : ''}" data-sort="name" onclick="changeSortType('name')">
                             🔤 名称
                         </button>
@@ -2151,10 +2180,8 @@
                     const linkCard = createLinkCard(link);
                     linksGrid.appendChild(linkCard);
                     
-                    // 只在默认排序模式下添加拖拽事件
-                    if (data.sortConfig.type === 'default') {
-                        setupLinkDragEventsForGrid(linkCard, group.id);
-                    }
+                    // 始终添加拖拽事件支持手动排序
+                    setupLinkDragEventsForGrid(linkCard, group.id);
                 });
             }
 
@@ -2166,8 +2193,8 @@
             const linkCard = document.createElement('div');
             linkCard.className = 'link-card';
             linkCard.dataset.linkId = link.id;
-            // 只在默认排序模式下允许拖拽
-            linkCard.draggable = data.sortConfig.type === 'default';
+            // 始终允许拖拽
+            linkCard.draggable = true;
 
             // 获取统计信息
             const stats = data.linkStats[link.id] || { clickCount: 0, lastVisit: null };
@@ -2201,8 +2228,8 @@
             
             const linkCard = document.createElement('div');
             linkCard.className = 'link-card';
-            // 只在默认排序模式下允许拖拽
-            linkCard.draggable = data.sortConfig.type === 'default';
+            // 始终允许拖拽
+            linkCard.draggable = true;
             linkCard.dataset.linkId = link.id;
             
             // 获取统计信息
@@ -2225,10 +2252,8 @@
             `;
             linksContainer.appendChild(linkCard);
             
-            // 只在默认排序模式下添加链接拖拽事件
-            if (data.sortConfig.type === 'default') {
-                setupLinkDragEvents(linkCard);
-            }
+            // 始终添加链接拖拽事件支持手动排序
+            setupLinkDragEvents(linkCard);
         }
 
         // 更新分组选择器
@@ -3171,9 +3196,9 @@
 
             function setSidebarWidth(width) {
                 sidebar.style.width = width + 'px';
-                container.style.marginLeft = (width + 20) + 'px';
+                container.style.marginLeft = (width + 40) + 'px';
                 if (recentSection) {
-                    recentSection.style.left = (width + 20) + 'px';
+                    recentSection.style.left = (width + 40) + 'px';
                 }
             }
         }
@@ -3228,17 +3253,6 @@
                         const aTime = data.linkStats[a.id]?.lastVisit || 0;
                         const bTime = data.linkStats[b.id]?.lastVisit || 0;
                         const comparison = aTime - bTime;
-                        return sortOrder === 'asc' ? comparison : -comparison;
-                    });
-                    break;
-                    
-                case 'default':
-                default:
-                    // 默认排序（按order字段）
-                    sortedLinks.sort((a, b) => {
-                        const orderA = a.order !== undefined ? a.order : 999;
-                        const orderB = b.order !== undefined ? b.order : 999;
-                        const comparison = orderA - orderB;
                         return sortOrder === 'asc' ? comparison : -comparison;
                     });
                     break;
