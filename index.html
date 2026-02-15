@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI网址导航</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 添加动态背景粒子效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: float 15s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #videoBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            display: none;
+        }
+
+        #imageBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            display: none;
+        }
+
+        .background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: -1;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        body.has-custom-background {
+            background: transparent;
+        }
+
+        body.has-custom-background .background-overlay {
+            display: block;
+        }
+
+        body.has-custom-background::before {
+            display: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            position: relative;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        header h1, header p {
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 8px 16px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        header h1:hover, header p:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.02);
+        }
+
+        header .editable-input {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: inherit;
+            font-weight: inherit;
+            font-family: inherit;
+            text-align: center;
+            color: #2d3748;
+            outline: none;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        header .editable-input:focus {
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            letter-spacing: 1px;
+        }
+
+        .settings-toggle {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3); }
+            50% { box-shadow: 0 8px 40px rgba(102, 126, 234, 0.5); }
+        }
+
+        .settings-toggle:hover {
+            transform: scale(1.15) rotate(90deg);
+            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.5);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .settings-toggle.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: rotate(180deg) scale(1.1);
+            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.6);
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -380px;
+            width: 380px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+            transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 100px 30px 30px 30px;
+        }
+
+        .settings-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .settings-panel::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+
+        .settings-panel::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        .settings-panel.active {
+            right: 0;
+        }
+
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .settings-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .settings-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+
+        .control-section {
+            margin-bottom: 35px;
+            animation: slideInRight 0.6s ease-out backwards;
+        }
+
+        .control-section:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .control-section:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .control-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 18px;
+            font-size: 19px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid transparent;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background-size: 100% 3px;
+            background-position: bottom;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        .control-section-title span:first-child {
+            font-size: 24px;
+            filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
+        }
+
+        .control-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .settings-panel .btn {
+            width: 100%;
+            text-align: left;
+            justify-content: flex-start;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .settings-panel .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: width 0.4s;
+        }
+
+        .settings-panel .btn:hover::before {
+            width: 100%;
+        }
+
+        .settings-panel .btn:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .settings-panel .btn span:first-child {
+            font-size: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            padding: 6px 12px;
+            font-size: 12px;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-delete:hover {
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-right: 5px;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-edit:hover {
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+        }
+
+        .btn-cancel:hover {
+            box-shadow: 0 6px 20px rgba(149, 165, 166, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .groups {
+            display: grid;
+            gap: 25px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .group {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out backwards;
+        }
+
+        .group::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.4s;
+        }
+
+        .group:hover::before {
+            transform: scaleX(1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .group:nth-child(1) { animation-delay: 0.1s; }
+        .group:nth-child(2) { animation-delay: 0.2s; }
+        .group:nth-child(3) { animation-delay: 0.3s; }
+        .group:nth-child(4) { animation-delay: 0.4s; }
+        .group:nth-child(5) { animation-delay: 0.5s; }
+
+        .group:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 48px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .group.dragging {
+            opacity: 0.6;
+            cursor: move;
+            transform: scale(0.98);
+        }
+
+        .group.drag-over {
+            border: 2px dashed #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .group-header:hover {
+            border-bottom-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .group-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .drag-handle {
+            cursor: move;
+            color: #cbd5e0;
+            font-size: 1.3em;
+            padding: 5px;
+            transition: all 0.3s;
+        }
+
+        .drag-handle:hover {
+            color: #667eea;
+            transform: scale(1.2);
+        }
+
+        .collapse-icon {
+            font-size: 1.2em;
+            color: #667eea;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            user-select: none;
+            filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
+        }
+
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .group-title {
+            font-size: 1.6em;
+            color: #2d3748;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.5px;
+        }
+
+        .group-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s;
+            opacity: 1;
+        }
+
+        .group-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .links {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .link-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            padding: 18px;
+            border-radius: 14px;
+            border: 2px solid transparent;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            cursor: move;
+            overflow: hidden;
+        }
+
+        .link-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.4s;
+            border-radius: 14px;
+        }
+
+        .link-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .link-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.25);
+        }
+
+        .link-card:hover::before {
+            opacity: 0.03;
+        }
+
+        .link-card.dragging {
+            opacity: 0.6;
+            transform: scale(0.95);
+        }
+
+        .link-card.drag-over {
+            border-color: #27ae60;
+            border-style: dashed;
+            background: rgba(39, 174, 96, 0.05);
+        }
+
+        .link-card a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+
+        .link-name {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-size: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: all 0.3s;
+        }
+
+        .link-card:hover .link-name {
+            transform: translateX(3px);
+        }
+
+        .link-url {
+            font-size: 12px;
+            color: #718096;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        .link-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 6px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 35px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 520px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            animation: slideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            color: #2d3748;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f7fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+        }
+
+        .btn-warning:hover {
+            background: #d68910;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .empty-group {
+            text-align: center;
+            color: #a0aec0;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 14px;
+            border: 2px dashed #cbd5e0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .empty-group::before {
+            content: '📭';
+            display: block;
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景元素 -->
+    <video id="videoBackground" loop muted autoplay playsinline></video>
+    <img id="imageBackground" alt="背景图片">
+    <div class="background-overlay"></div>
+
+    <!-- 设置按钮 -->
+    <button class="settings-toggle" onclick="toggleSettings()" id="settingsToggle">⚙️</button>
+
+    <!-- 设置遮罩层 -->
+    <div class="settings-overlay" onclick="toggleSettings()" id="settingsOverlay"></div>
+
+    <!-- 设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <!-- 内容管理 -->
+        <div class="control-section">
+            <div class="control-section-title">
+                <span>📋</span>
+                <span>内容管理</span>
+            </div>
+            <div class="control-buttons">
+                <button class="btn" onclick="openAddGroupModal()">
+                    <span>➕</span>
+                    <span>添加分组</span>
+                </button>
+                <button class="btn" onclick="openAddLinkModal()">
+                    <span>🔗</span>
+                    <span>添加网址</span>
+                </button>
+                <button class="btn" onclick="exportData()">
+                    <span>💾</span>
+                    <span>导出数据</span>
+                </button>
+                <button class="btn" onclick="importData()">
+                    <span>📥</span>
+                    <span>导入数据</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 背景设置 -->
+        <div class="control-section">
+            <div class="control-section-title">
+                <span>🎨</span>
+                <span>背景设置</span>
+            </div>
+            <div class="control-buttons">
+                <button class="btn btn-success" onclick="selectImageBackground()">
+                    <span>🖼️</span>
+                    <span>图片背景</span>
+                </button>
+                <button class="btn btn-success" onclick="selectVideoBackground()">
+                    <span>🎬</span>
+                    <span>视频背景</span>
+                </button>
+                <button class="btn btn-warning" onclick="removeBackground()">
+                    <span>🔄</span>
+                    <span>恢复默认</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1 id="siteTitle" onclick="makeEditable('siteTitle')" title="点击编辑标题">🤖 AI 网址导航</h1>
+            <p id="siteSubtitle" onclick="makeEditable('siteSubtitle')" title="点击编辑副标题">你的个人AI工具收藏夹</p>
+        </header>
+
+        <div class="groups" id="groupsContainer"></div>
+    </div>
+
+    <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+    <input type="file" id="videoInput" accept="video/*" onchange="handleVideoUpload(event)">
+
+    <!-- 添加分组模态框 -->
+    <div class="modal" id="addGroupModal">
+        <div class="modal-content">
+            <h2 class="modal-title">添加分组</h2>
+            <div class="form-group">
+                <label>分组名称</label>
+                <input type="text" id="groupName" placeholder="例如：聊天机器人">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-cancel" onclick="closeModal('addGroupModal')">取消</button>
+                <button class="btn" onclick="addGroup()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑网址模态框 -->
+    <div class="modal" id="addLinkModal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="linkModalTitle">添加网址</h2>
+            <div class="form-group">
+                <label>网站名称</label>
+                <input type="text" id="linkName" placeholder="例如：ChatGPT">
+            </div>
+            <div class="form-group">
+                <label>网址</label>
+                <input type="url" id="linkUrl" placeholder="https://example.com">
+            </div>
+            <div class="form-group">
+                <label>所属分组</label>
+                <select id="linkGroup"></select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-cancel" onclick="closeModal('addLinkModal')">取消</button>
+                <button class="btn" onclick="saveLink()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑分组模态框 -->
+    <div class="modal" id="editGroupModal">
+        <div class="modal-content">
+            <h2 class="modal-title">编辑分组</h2>
+            <div class="form-group">
+                <label>分组名称</label>
+                <input type="text" id="editGroupName">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-cancel" onclick="closeModal('editGroupModal')">取消</button>
+                <button class="btn" onclick="updateGroup()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据结构
+        let data = {
+            groups: [],
+            links: [],
+            background: {
+                type: 'gradient', // 'gradient', 'image', 'video'
+                data: null // base64 data or video URL
+            },
+            collapsedGroups: [], // 存储折叠的分组ID
+            siteTitle: '🤖 AI 网址导航',
+            siteSubtitle: '你的个人AI工具收藏夹'
+        };
+
+        let editingLinkId = null;
+        let editingGroupId = null;
+        let draggedElement = null;
+        let draggedType = null; // 'group' or 'link'
+        let draggedId = null;
+
+        // 初始化
+        function init() {
+            loadData();
+            renderGroups();
+            applyBackground();
+            loadTitles();
+        }
+
+        // 加载标题
+        function loadTitles() {
+            document.getElementById('siteTitle').textContent = data.siteTitle || '🤖 AI 网址导航';
+            document.getElementById('siteSubtitle').textContent = data.siteSubtitle || '你的个人AI工具收藏夹';
+        }
+
+        // 加载数据
+        function loadData() {
+            const savedData = localStorage.getItem('aiNavigator');
+            if (savedData) {
+                data = JSON.parse(savedData);
+                // 确保背景配置存在
+                if (!data.background) {
+                    data.background = {
+                        type: 'gradient',
+                        data: null
+                    };
+                }
+                // 确保折叠状态存在
+                if (!data.collapsedGroups) {
+                    data.collapsedGroups = [];
+                }
+                // 确保标题存在
+                if (!data.siteTitle) {
+                    data.siteTitle = '🤖 AI 网址导航';
+                }
+                if (!data.siteSubtitle) {
+                    data.siteSubtitle = '你的个人AI工具收藏夹';
+                }
+            } else {
+                // 默认数据
+                data = {
+                    groups: [
+                        { id: 1, name: '聊天机器人', order: 0 },
+                        { id: 2, name: '图像生成', order: 1 },
+                        { id: 3, name: '开发工具', order: 2 }
+                    ],
+                    links: [
+                        { id: 1, name: 'ChatGPT', url: 'https://chat.openai.com', groupId: 1, order: 0 },
+                        { id: 2, name: 'Claude', url: 'https://claude.ai', groupId: 1, order: 1 },
+                        { id: 3, name: 'Midjourney', url: 'https://midjourney.com', groupId: 2, order: 0 },
+                        { id: 4, name: 'GitHub Copilot', url: 'https://github.com/features/copilot', groupId: 3, order: 0 }
+                    ],
+                    background: {
+                        type: 'gradient',
+                        data: null
+                    },
+                    collapsedGroups: [],
+                    siteTitle: '🤖 AI 网址导航',
+                    siteSubtitle: '你的个人AI工具收藏夹'
+                };
+                saveData();
+            }
+        }
+
+        // 保存数据
+        function saveData() {
+            localStorage.setItem('aiNavigator', JSON.stringify(data));
+        }
+
+        // 渲染分组
+        function renderGroups() {
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = '';
+
+            // 按order排序，如果没有order则保持原顺序
+            const sortedGroups = [...data.groups].sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 999;
+                const orderB = b.order !== undefined ? b.order : 999;
+                return orderA - orderB;
+            });
+
+            sortedGroups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group';
+                groupDiv.draggable = true;
+                groupDiv.dataset.groupId = group.id;
+                
+                const groupLinks = data.links.filter(link => link.groupId === group.id)
+                    .sort((a, b) => {
+                        const orderA = a.order !== undefined ? a.order : 999;
+                        const orderB = b.order !== undefined ? b.order : 999;
+                        return orderA - orderB;
+                    });
+                
+                const isCollapsed = data.collapsedGroups.includes(group.id);
+                
+                groupDiv.innerHTML = `
+                    <div class="group-header" onclick="toggleGroup(${group.id})">
+                        <div class="group-title-wrapper">
+                            <span class="drag-handle" draggable="true" onclick="event.stopPropagation()">⋮⋮</span>
+                            <span class="collapse-icon ${isCollapsed ? 'collapsed' : ''}">▼</span>
+                            <div class="group-title">${group.name}</div>
+                        </div>
+                        <div class="group-actions" onclick="event.stopPropagation()">
+                            <button class="btn btn-edit" onclick="openEditGroupModal(${group.id})">编辑</button>
+                            <button class="btn btn-delete" onclick="deleteGroup(${group.id})">删除分组</button>
+                        </div>
+                    </div>
+                    <div class="group-content ${isCollapsed ? 'collapsed' : ''}" id="content-${group.id}">
+                        <div class="links" id="links-${group.id}">
+                            ${groupLinks.length === 0 ? '<div class="empty-group">暂无网址，点击上方"添加网址"按钮添加</div>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(groupDiv);
+                
+                // 添加分组拖拽事件
+                setupGroupDragEvents(groupDiv);
+                
+                // 渲染链接
+                groupLinks.forEach(link => {
+                    renderLink(link, group.id);
+                });
+            });
+
+            updateGroupSelect();
+        }
+
+        // 渲染单个链接
+        function renderLink(link, groupId) {
+            const linksContainer = document.getElementById(`links-${groupId}`);
+            
+            // 移除空提示
+            const emptyMsg = linksContainer.querySelector('.empty-group');
+            if (emptyMsg) emptyMsg.remove();
+            
+            const linkCard = document.createElement('div');
+            linkCard.className = 'link-card';
+            linkCard.draggable = true;
+            linkCard.dataset.linkId = link.id;
+            linkCard.innerHTML = `
+                <a href="${link.url}" target="_blank" onclick="event.stopPropagation()">
+                    <div class="link-name">${link.name}</div>
+                    <div class="link-url">${link.url}</div>
+                </a>
+                <div class="link-actions">
+                    <button class="btn btn-edit" onclick="openEditLinkModal(${link.id})">编辑</button>
+                    <button class="btn btn-delete" onclick="deleteLink(${link.id})">删除</button>
+                </div>
+            `;
+            linksContainer.appendChild(linkCard);
+            
+            // 添加链接拖拽事件
+            setupLinkDragEvents(linkCard);
+        }
+
+        // 更新分组选择器
+        function updateGroupSelect() {
+            const select = document.getElementById('linkGroup');
+            select.innerHTML = '';
+            data.groups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group.id;
+                option.textContent = group.name;
+                select.appendChild(option);
+            });
+        }
+
+        // 打开添加分组模态框
+        function openAddGroupModal() {
+            document.getElementById('groupName').value = '';
+            openModal('addGroupModal');
+        }
+
+        // 切换分组折叠状态
+        function toggleGroup(groupId) {
+            const index = data.collapsedGroups.indexOf(groupId);
+            if (index > -1) {
+                data.collapsedGroups.splice(index, 1);
+            } else {
+                data.collapsedGroups.push(groupId);
+            }
+            saveData();
+            
+            // 只更新UI，不重新渲染
+            const content = document.getElementById(`content-${groupId}`);
+            const icon = content.previousElementSibling.querySelector('.collapse-icon');
+            
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        }
+
+        // 添加分组
+        function addGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            if (!name) {
+                alert('请输入分组名称');
+                return;
+            }
+
+            const maxOrder = data.groups.length > 0 
+                ? Math.max(...data.groups.map(g => g.order !== undefined ? g.order : 0))
+                : -1;
+
+            const newGroup = {
+                id: Date.now(),
+                name: name,
+                order: maxOrder + 1
+            };
+
+            data.groups.push(newGroup);
+            saveData();
+            renderGroups();
+            closeModal('addGroupModal');
+        }
+
+        // 打开编辑分组模态框
+        function openEditGroupModal(groupId) {
+            editingGroupId = groupId;
+            const group = data.groups.find(g => g.id === groupId);
+            document.getElementById('editGroupName').value = group.name;
+            openModal('editGroupModal');
+        }
+
+        // 更新分组
+        function updateGroup() {
+            const name = document.getElementById('editGroupName').value.trim();
+            if (!name) {
+                alert('请输入分组名称');
+                return;
+            }
+
+            const group = data.groups.find(g => g.id === editingGroupId);
+            group.name = name;
+            saveData();
+            renderGroups();
+            closeModal('editGroupModal');
+        }
+
+        // 删除分组
+        function deleteGroup(groupId) {
+            if (!confirm('确定要删除这个分组吗？分组内的所有网址也会被删除。')) {
+                return;
+            }
+
+            data.groups = data.groups.filter(g => g.id !== groupId);
+            data.links = data.links.filter(l => l.groupId !== groupId);
+            saveData();
+            renderGroups();
+        }
+
+        // 打开添加网址模态框
+        function openAddLinkModal() {
+            if (data.groups.length === 0) {
+                alert('请先添加至少一个分组');
+                return;
+            }
+
+            editingLinkId = null;
+            document.getElementById('linkModalTitle').textContent = '添加网址';
+            document.getElementById('linkName').value = '';
+            document.getElementById('linkUrl').value = '';
+            updateGroupSelect();
+            openModal('addLinkModal');
+        }
+
+        // 打开编辑网址模态框
+        function openEditLinkModal(linkId) {
+            editingLinkId = linkId;
+            const link = data.links.find(l => l.id === linkId);
+            
+            document.getElementById('linkModalTitle').textContent = '编辑网址';
+            document.getElementById('linkName').value = link.name;
+            document.getElementById('linkUrl').value = link.url;
+            updateGroupSelect();
+            document.getElementById('linkGroup').value = link.groupId;
+            openModal('addLinkModal');
+        }
+
+        // 保存链接
+        function saveLink() {
+            const name = document.getElementById('linkName').value.trim();
+            const url = document.getElementById('linkUrl').value.trim();
+            const groupId = parseInt(document.getElementById('linkGroup').value);
+
+            if (!name || !url) {
+                alert('请填写完整信息');
+                return;
+            }
+
+            if (editingLinkId) {
+                // 编辑
+                const link = data.links.find(l => l.id === editingLinkId);
+                link.name = name;
+                link.url = url;
+                link.groupId = groupId;
+            } else {
+                // 新增
+                const groupLinks = data.links.filter(l => l.groupId === groupId);
+                const maxOrder = groupLinks.length > 0
+                    ? Math.max(...groupLinks.map(l => l.order !== undefined ? l.order : 0))
+                    : -1;
+
+                const newLink = {
+                    id: Date.now(),
+                    name: name,
+                    url: url,
+                    groupId: groupId,
+                    order: maxOrder + 1
+                };
+                data.links.push(newLink);
+            }
+
+            saveData();
+            renderGroups();
+            closeModal('addLinkModal');
+        }
+
+        // 删除链接
+        function deleteLink(linkId) {
+            if (!confirm('确定要删除这个网址吗？')) {
+                return;
+            }
+
+            data.links = data.links.filter(l => l.id !== linkId);
+            saveData();
+            renderGroups();
+        }
+
+        // 导出数据
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'ai-navigator-backup.json';
+            link.click();
+        }
+
+        // 导入数据
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        if (confirm('导入数据将覆盖当前数据，确定继续吗？')) {
+                            data = importedData;
+                            saveData();
+                            renderGroups();
+                            alert('导入成功！');
+                        }
+                    } catch (error) {
+                        alert('导入失败，文件格式不正确');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // 模态框操作
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // 选择图片背景
+        function selectImageBackground() {
+            document.getElementById('imageInput').click();
+        }
+
+        // 选择视频背景
+        function selectVideoBackground() {
+            document.getElementById('videoInput').click();
+        }
+
+        // 处理图片上传
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 检查文件大小（限制为10MB）
+            if (file.size > 10 * 1024 * 1024) {
+                alert('图片文件太大，请选择小于10MB的图片');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                data.background = {
+                    type: 'image',
+                    data: e.target.result
+                };
+                saveData();
+                applyBackground();
+                alert('图片背景已设置！');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 处理视频上传
+        function handleVideoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 检查文件大小（限制为50MB）
+            if (file.size > 50 * 1024 * 1024) {
+                alert('视频文件太大，请选择小于50MB的视频');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                data.background = {
+                    type: 'video',
+                    data: e.target.result
+                };
+                saveData();
+                applyBackground();
+                alert('视频背景已设置！');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 应用背景
+        function applyBackground() {
+            const videoEl = document.getElementById('videoBackground');
+            const imageEl = document.getElementById('imageBackground');
+            const body = document.body;
+
+            // 重置
+            videoEl.style.display = 'none';
+            imageEl.style.display = 'none';
+            body.classList.remove('has-custom-background');
+            videoEl.pause();
+            videoEl.src = '';
+
+            if (data.background.type === 'image' && data.background.data) {
+                imageEl.src = data.background.data;
+                imageEl.style.display = 'block';
+                body.classList.add('has-custom-background');
+            } else if (data.background.type === 'video' && data.background.data) {
+                videoEl.src = data.background.data;
+                videoEl.style.display = 'block';
+                body.classList.add('has-custom-background');
+                videoEl.play().catch(err => {
+                    console.log('视频自动播放失败:', err);
+                });
+            }
+        }
+
+        // 移除背景
+        function removeBackground() {
+            if (confirm('确定要恢复默认渐变背景吗？')) {
+                data.background = {
+                    type: 'gradient',
+                    data: null
+                };
+                saveData();
+                applyBackground();
+                alert('已恢复默认背景！');
+            }
+        }
+
+        // ==================== 拖拽功能 ====================
+
+        // 切换设置面板
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            const overlay = document.getElementById('settingsOverlay');
+            const toggle = document.getElementById('settingsToggle');
+            
+            panel.classList.toggle('active');
+            overlay.classList.toggle('active');
+            toggle.classList.toggle('active');
+        }
+
+        // 使元素可编辑
+        function makeEditable(elementId) {
+            const element = document.getElementById(elementId);
+            const currentText = element.textContent;
+            const isTitle = elementId === 'siteTitle';
+            
+            // 创建输入框
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.className = 'editable-input';
+            input.style.width = isTitle ? '600px' : '400px';
+            input.style.fontSize = isTitle ? '3em' : '1.1em';
+            input.style.fontWeight = isTitle ? '800' : 'normal';
+            input.style.letterSpacing = isTitle ? '2px' : '1px';
+            
+            // 替换元素
+            element.replaceWith(input);
+            input.focus();
+            input.select();
+            
+            // 保存函数
+            const saveEdit = () => {
+                const newText = input.value.trim() || currentText;
+                
+                // 恢复原元素
+                const newElement = document.createElement(isTitle ? 'h1' : 'p');
+                newElement.id = elementId;
+                newElement.textContent = newText;
+                newElement.onclick = () => makeEditable(elementId);
+                newElement.title = isTitle ? '点击编辑标题' : '点击编辑副标题';
+                input.replaceWith(newElement);
+                
+                // 保存到数据
+                if (elementId === 'siteTitle') {
+                    data.siteTitle = newText;
+                } else if (elementId === 'siteSubtitle') {
+                    data.siteSubtitle = newText;
+                }
+                saveData();
+            };
+            
+            // 回车或失焦保存
+            input.addEventListener('blur', saveEdit);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    saveEdit();
+                }
+            });
+            
+            // ESC取消
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const newElement = document.createElement(isTitle ? 'h1' : 'p');
+                    newElement.id = elementId;
+                    newElement.textContent = currentText;
+                    newElement.onclick = () => makeEditable(elementId);
+                    newElement.title = isTitle ? '点击编辑标题' : '点击编辑副标题';
+                    input.replaceWith(newElement);
+                }
+            });
+        }
+
+        // 设置分组拖拽事件
+        function setupGroupDragEvents(groupDiv) {
+            const dragHandle = groupDiv.querySelector('.drag-handle');
+            
+            dragHandle.addEventListener('dragstart', (e) => {
+                e.stopPropagation();
+                draggedElement = groupDiv;
+                draggedType = 'group';
+                draggedId = parseInt(groupDiv.dataset.groupId);
+                groupDiv.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            groupDiv.addEventListener('dragend', () => {
+                groupDiv.classList.remove('dragging');
+                draggedElement = null;
+                draggedType = null;
+                draggedId = null;
+            });
+
+            groupDiv.addEventListener('dragover', (e) => {
+                if (draggedType !== 'group') return;
+                e.preventDefault();
+                const afterElement = getDragAfterElement(groupDiv.parentElement, e.clientY, 'group');
+                if (afterElement == null) {
+                    groupDiv.parentElement.appendChild(draggedElement);
+                } else {
+                    groupDiv.parentElement.insertBefore(draggedElement, afterElement);
+                }
+            });
+
+            groupDiv.addEventListener('drop', (e) => {
+                if (draggedType !== 'group') return;
+                e.preventDefault();
+                reorderGroups();
+            });
+        }
+
+        // 设置链接拖拽事件
+        function setupLinkDragEvents(linkCard) {
+            linkCard.addEventListener('dragstart', (e) => {
+                draggedElement = linkCard;
+                draggedType = 'link';
+                draggedId = parseInt(linkCard.dataset.linkId);
+                linkCard.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            linkCard.addEventListener('dragend', () => {
+                linkCard.classList.remove('dragging');
+                document.querySelectorAll('.link-card').forEach(card => {
+                    card.classList.remove('drag-over');
+                });
+                draggedElement = null;
+                draggedType = null;
+                draggedId = null;
+            });
+
+            linkCard.addEventListener('dragover', (e) => {
+                if (draggedType !== 'link') return;
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const linksContainer = linkCard.parentElement;
+                const afterElement = getDragAfterElement(linksContainer, e.clientY, 'link');
+                
+                if (afterElement == null) {
+                    linksContainer.appendChild(draggedElement);
+                } else {
+                    linksContainer.insertBefore(draggedElement, afterElement);
+                }
+            });
+
+            linkCard.addEventListener('drop', (e) => {
+                if (draggedType !== 'link') return;
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // 获取目标分组ID
+                const targetGroupId = parseInt(linkCard.closest('.group').dataset.groupId);
+                reorderLinks(targetGroupId);
+            });
+
+            // 链接容器也需要处理拖放
+            const linksContainer = linkCard.parentElement;
+            if (!linksContainer.dataset.dragListenerAdded) {
+                linksContainer.dataset.dragListenerAdded = 'true';
+                
+                linksContainer.addEventListener('dragover', (e) => {
+                    if (draggedType !== 'link') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+
+                linksContainer.addEventListener('drop', (e) => {
+                    if (draggedType !== 'link') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const targetGroupId = parseInt(linksContainer.closest('.group').dataset.groupId);
+                    
+                    // 如果容器是空的或拖到空白处
+                    if (linksContainer.children.length === 0 || !e.target.classList.contains('link-card')) {
+                        linksContainer.appendChild(draggedElement);
+                    }
+                    
+                    reorderLinks(targetGroupId);
+                });
+            }
+        }
+
+        // 获取拖拽后的位置
+        function getDragAfterElement(container, y, type) {
+            const selector = type === 'group' ? '.group:not(.dragging)' : '.link-card:not(.dragging)';
+            const draggableElements = [...container.querySelectorAll(selector)];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // 重新排序分组
+        function reorderGroups() {
+            const groupElements = document.querySelectorAll('.group');
+            groupElements.forEach((el, index) => {
+                const groupId = parseInt(el.dataset.groupId);
+                const group = data.groups.find(g => g.id === groupId);
+                if (group) {
+                    group.order = index;
+                }
+            });
+            saveData();
+        }
+
+        // 重新排序链接
+        function reorderLinks(targetGroupId) {
+            const draggedLink = data.links.find(l => l.id === draggedId);
+            if (!draggedLink) return;
+
+            // 更新链接的groupId
+            draggedLink.groupId = targetGroupId;
+
+            // 重新排序该分组下的所有链接
+            const linksContainer = document.getElementById(`links-${targetGroupId}`);
+            const linkElements = linksContainer.querySelectorAll('.link-card');
+            
+            linkElements.forEach((el, index) => {
+                const linkId = parseInt(el.dataset.linkId);
+                const link = data.links.find(l => l.id === linkId);
+                if (link) {
+                    link.order = index;
+                    link.groupId = targetGroupId;
+                }
+            });
+
+            saveData();
+            renderGroups(); // 重新渲染以更新空提示
+        }
+
+        // 页面加载时初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
