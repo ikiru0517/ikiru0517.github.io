@@ -91,8 +91,229 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            margin-left: 220px;
             position: relative;
             z-index: 1;
+            padding-right: 15px;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            position: fixed;
+            left: 10px;
+            top: 10px;
+            width: 200px;
+            height: calc(100vh - 20px);
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+            overflow-y: auto;
+            padding: 15px 10px 150px 10px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+            pointer-events: none;
+            border-radius: 16px;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 2px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        /* 侧边栏调整手柄 */
+        .sidebar-resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 8px;
+            height: 100%;
+            cursor: ew-resize;
+            z-index: 10;
+            transition: background 0.2s;
+        }
+
+        .sidebar-resizer::before {
+            content: '';
+            position: absolute;
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 40px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-resizer:hover::before {
+            background: rgba(102, 126, 234, 0.4);
+            height: 60px;
+        }
+
+        .sidebar-resizer.active::before {
+            background: rgba(102, 126, 234, 0.6);
+            height: 80px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.08);
+        }
+
+        .sidebar-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sidebar-add-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+        }
+
+        .sidebar-add-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.35);
+        }
+
+        .sidebar-groups {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar-group {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            padding: 8px 10px;
+            border-radius: 8px;
+            border-left: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(8px);
+        }
+
+        .sidebar-group:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-left-color: #667eea;
+            transform: translateX(2px);
+        }
+
+        .sidebar-group.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            border-left-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.15);
+        }
+
+        .sidebar-group-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.85em;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-group-count {
+            background: rgba(102, 126, 234, 0.12);
+            color: #667eea;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .sidebar-group-actions {
+            display: none;
+            gap: 3px;
+        }
+
+        .sidebar-group:hover .sidebar-group-actions {
+            display: flex;
+        }
+
+        .sidebar-group-action-btn {
+            background: transparent;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            padding: 3px;
+            border-radius: 3px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-group-action-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        /* 响应式 - 小屏幕隐藏侧边栏 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.mobile-active {
+                transform: translateX(0);
+            }
+            
+            .container {
+                margin-left: 0;
+                padding: 0 20px;
+            }
+
+            .recent-section {
+                left: 10px;
+                right: 10px;
+            }
         }
 
         header {
@@ -605,10 +826,112 @@
             display: none;
         }
 
+        /* 毛玻璃效果滑块样式 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(102, 126, 234, 0.6) 100%);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input[type="range"]:hover {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(102, 126, 234, 0.7) 100%);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            border: none;
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+        }
+
         .groups {
             display: grid;
-            gap: 25px;
+            gap: 18px;
             animation: fadeIn 0.8s ease-out;
+            padding-bottom: 140px;
+        }
+
+        /* 链接视图样式（选中分组时使用） */
+        .links-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px 25px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            animation: fadeInDown 0.5s ease-out;
+        }
+
+        .links-view-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .links-view-icon {
+            font-size: 1.8em;
+        }
+
+        .links-view-title h2 {
+            font-size: 1.8em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+
+        .links-view-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .links-view-actions .btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+            animation: fadeIn 0.6s ease-out;
         }
 
         @keyframes fadeIn {
@@ -871,29 +1194,65 @@
             color: #27ae60;
         }
 
-        /* 最近使用区域样式 */
+        /* 最近使用区域样式 - 固定在底部 */
         .recent-section {
-            margin-bottom: 30px;
-            animation: fadeInUp 0.5s ease-out;
+            position: fixed;
+            bottom: 10px;
+            left: 220px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 99;
+            padding: 10px 15px;
+            animation: slideUpFromBottom 0.5s ease-out;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .recent-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+            pointer-events: none;
+            border-radius: 16px;
+        }
+
+        @keyframes slideUpFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .recent-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            padding: 12px 16px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-            border-radius: 12px;
-            border-left: 3px solid #667eea;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+            border-left: none;
+            position: relative;
+            z-index: 1;
         }
 
         .recent-header-icon {
-            font-size: 1.3em;
+            font-size: 1em;
         }
 
         .recent-header-title {
-            font-size: 1.2em;
+            font-size: 0.95em;
             font-weight: 700;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
@@ -902,13 +1261,43 @@
         }
 
         .recent-links {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 14px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(102, 126, 234, 0.15) transparent;
+            position: relative;
+            z-index: 1;
+        }
+
+        .recent-links::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .recent-links::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 2px;
+        }
+
+        .recent-links::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 2px;
+        }
+
+        .recent-links::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.3);
         }
 
         .recent-link-card {
             position: relative;
+            min-width: 160px;
+            flex-shrink: 0;
+        }
+
+        .recent-link-card .link-card {
+            margin-bottom: 0;
         }
 
         .hot-badge {
@@ -929,6 +1318,11 @@
         @keyframes pulse-badge {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.08); }
+        }
+
+        /* 给主内容区域添加底部边距，避免被遮挡 */
+        .groups {
+            padding-bottom: 180px;
         }
 
         .link-actions {
@@ -1096,6 +1490,16 @@
     <img id="imageBackground" alt="背景图片">
     <div class="background-overlay"></div>
 
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-resizer" id="sidebarResizer"></div>
+        <div class="sidebar-header">
+            <div class="sidebar-title">📁 分组</div>
+            <button class="sidebar-add-btn" onclick="openAddGroupModal()" title="添加分组">+</button>
+        </div>
+        <div class="sidebar-groups" id="sidebarGroups"></div>
+    </div>
+
     <!-- 设置按钮 -->
     <button class="settings-toggle" onclick="toggleSettings()" id="settingsToggle">⚙️</button>
 
@@ -1149,6 +1553,29 @@
                     <span>🔄</span>
                     <span>恢复默认</span>
                 </button>
+            </div>
+            
+            <!-- 毛玻璃效果控制 -->
+            <div class="blur-control" style="margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label style="font-weight: 600; color: #2d3748; font-size: 0.95em;">
+                        ❄️ 毛玻璃效果
+                    </label>
+                    <span id="blurIntensityValue" style="font-weight: 600; color: #667eea; font-size: 0.9em;">25px</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="blurIntensitySlider" 
+                    min="0" 
+                    max="50" 
+                    value="25" 
+                    style="width: 100%; cursor: pointer;"
+                    oninput="updateBlurIntensity(this.value)"
+                />
+                <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.8em; color: #718096;">
+                    <span>关闭</span>
+                    <span>最强</span>
+                </div>
             </div>
         </div>
     </div>
@@ -1284,6 +1711,7 @@
             },
             collapsedGroups: [], // 存储折叠的分组ID
             linkStats: {}, // 存储每个链接的统计信息 { linkId: { clickCount: 0, lastVisit: timestamp } }
+            blurIntensity: 25, // 毛玻璃模糊强度 (0-50)
             siteTitle: '🤖 AI 网址导航',
             siteSubtitle: '你的个人AI工具收藏夹'
         };
@@ -1302,13 +1730,20 @@
             url: 'https://www.google.com/search?q='
         };
 
+        // 当前选中的分组ID（null表示显示全部）
+        let currentGroupId = null;
+
         // 初始化
         function init() {
             loadData();
+            renderSidebar();
             renderGroups();
             applyBackground();
             loadTitles();
             loadSearchEngine();
+            renderRecentLinks();
+            initSidebarResizer();
+            initBlurEffect();
         }
 
         // 加载搜索引擎设置
@@ -1406,6 +1841,10 @@
                 if (!data.siteSubtitle) {
                     data.siteSubtitle = '你的个人AI工具收藏夹';
                 }
+                // 确保毛玻璃强度存在
+                if (data.blurIntensity === undefined) {
+                    data.blurIntensity = 25;
+                }
             } else {
                 // 默认数据
                 data = {
@@ -1426,6 +1865,7 @@
                     },
                     collapsedGroups: [],
                     linkStats: {},
+                    blurIntensity: 25,
                     siteTitle: '🤖 AI 网址导航',
                     siteSubtitle: '你的个人AI工具收藏夹'
                 };
@@ -1443,10 +1883,16 @@
             const container = document.getElementById('groupsContainer');
             container.innerHTML = '';
 
-            // 渲染最近使用区域
-            renderRecentLinks(container);
+            // 如果选中了特定分组，直接显示该分组的链接
+            if (currentGroupId !== null) {
+                const selectedGroup = data.groups.find(g => g.id === currentGroupId);
+                if (selectedGroup) {
+                    renderGroupLinks(selectedGroup, container);
+                }
+                return;
+            }
 
-            // 按order排序，如果没有order则保持原顺序
+            // 显示所有分组（默认状态）
             const sortedGroups = [...data.groups].sort((a, b) => {
                 const orderA = a.order !== undefined ? a.order : 999;
                 const orderB = b.order !== undefined ? b.order : 999;
@@ -1499,6 +1945,77 @@
             });
 
             updateGroupSelect();
+        }
+
+        // 渲染分组的所有链接（无分组容器）
+        function renderGroupLinks(group, container) {
+            const groupLinks = data.links.filter(link => link.groupId === group.id)
+                .sort((a, b) => {
+                    const orderA = a.order !== undefined ? a.order : 999;
+                    const orderB = b.order !== undefined ? b.order : 999;
+                    return orderA - orderB;
+                });
+
+            // 创建标题区域
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'links-view-header';
+            headerDiv.innerHTML = `
+                <div class="links-view-title">
+                    <span class="links-view-icon">📁</span>
+                    <h2>${group.name}</h2>
+                </div>
+                <div class="links-view-actions">
+                    <button class="btn" onclick="openAddLinkModal()">
+                        <span>➕</span>
+                        <span>添加网址</span>
+                    </button>
+                </div>
+            `;
+            container.appendChild(headerDiv);
+
+            // 创建链接网格容器
+            const linksGrid = document.createElement('div');
+            linksGrid.className = 'links-grid';
+            linksGrid.id = `links-grid-${group.id}`;
+
+            if (groupLinks.length === 0) {
+                linksGrid.innerHTML = '<div class="empty-group">暂无网址，点击上方"添加网址"按钮添加</div>';
+            } else {
+                groupLinks.forEach(link => {
+                    const linkCard = createLinkCard(link);
+                    linksGrid.appendChild(linkCard);
+                });
+            }
+
+            container.appendChild(linksGrid);
+        }
+
+        // 创建链接卡片
+        function createLinkCard(link) {
+            const linkCard = document.createElement('div');
+            linkCard.className = 'link-card';
+            linkCard.dataset.linkId = link.id;
+
+            // 获取统计信息
+            const stats = data.linkStats[link.id] || { clickCount: 0, lastVisit: null };
+            const lastVisitText = stats.lastVisit ? formatTimeAgo(stats.lastVisit) : '从未访问';
+
+            linkCard.innerHTML = `
+                <a href="${link.url}" target="_blank" onclick="event.stopPropagation(); trackLinkClick(${link.id})">
+                    <div class="link-name">${link.name}</div>
+                    <div class="link-url">${link.url}</div>
+                    <div class="link-stats">
+                        <span class="click-count-badge">🔥 ${stats.clickCount} 次</span>
+                        <span class="last-visit-badge">⏰ ${lastVisitText}</span>
+                    </div>
+                </a>
+                <div class="link-actions">
+                    <button class="btn btn-edit" onclick="openEditLinkModal(${link.id})">编辑</button>
+                    <button class="btn btn-delete" onclick="deleteLink(${link.id})">删除</button>
+                </div>
+            `;
+
+            return linkCard;
         }
 
         // 渲染单个链接
@@ -1594,6 +2111,7 @@
 
             data.groups.push(newGroup);
             saveData();
+            renderSidebar();
             renderGroups();
             closeModal('addGroupModal');
         }
@@ -1617,6 +2135,7 @@
             const group = data.groups.find(g => g.id === editingGroupId);
             group.name = name;
             saveData();
+            renderSidebar();
             renderGroups();
             closeModal('editGroupModal');
         }
@@ -1629,7 +2148,14 @@
 
             data.groups = data.groups.filter(g => g.id !== groupId);
             data.links = data.links.filter(l => l.groupId !== groupId);
+            
+            // 如果删除的是当前选中的分组，切换到全部
+            if (currentGroupId === groupId) {
+                currentGroupId = null;
+            }
+            
             saveData();
+            renderSidebar();
             renderGroups();
         }
 
@@ -1696,6 +2222,7 @@
             }
 
             saveData();
+            renderSidebar();
             renderGroups();
             closeModal('addLinkModal');
         }
@@ -1708,6 +2235,7 @@
 
             data.links = data.links.filter(l => l.id !== linkId);
             saveData();
+            renderSidebar();
             renderGroups();
         }
 
@@ -1860,6 +2388,59 @@
                 applyBackground();
                 alert('已恢复默认背景！');
             }
+        }
+
+        // 更新毛玻璃效果强度
+        function updateBlurIntensity(value) {
+            data.blurIntensity = parseInt(value);
+            document.getElementById('blurIntensityValue').textContent = value + 'px';
+            applyBlurEffect(value);
+            saveData();
+        }
+
+        // 应用毛玻璃效果
+        function applyBlurEffect(intensity) {
+            const sidebar = document.getElementById('sidebar');
+            const recentSection = document.querySelector('.recent-section');
+            const groups = document.querySelectorAll('.group');
+            const linkCards = document.querySelectorAll('.link-card');
+            
+            // 计算饱和度（基础180%）
+            const saturate = intensity > 0 ? 180 : 100;
+            const blurValue = intensity > 0 ? `blur(${intensity}px) saturate(${saturate}%)` : 'none';
+            
+            // 应用到侧边栏
+            if (sidebar) {
+                sidebar.style.backdropFilter = blurValue;
+                sidebar.style.webkitBackdropFilter = blurValue;
+            }
+            
+            // 应用到最近使用区域
+            if (recentSection) {
+                recentSection.style.backdropFilter = blurValue;
+                recentSection.style.webkitBackdropFilter = blurValue;
+            }
+            
+            // 应用到分组卡片
+            groups.forEach(group => {
+                group.style.backdropFilter = intensity > 0 ? `blur(${Math.min(intensity / 2.5, 10)}px)` : 'none';
+                group.style.webkitBackdropFilter = intensity > 0 ? `blur(${Math.min(intensity / 2.5, 10)}px)` : 'none';
+            });
+            
+            // 应用到链接卡片（轻微效果）
+            linkCards.forEach(card => {
+                const lightBlur = intensity > 0 ? `blur(${Math.min(intensity / 4, 5)}px)` : 'none';
+                card.style.backdropFilter = lightBlur;
+                card.style.webkitBackdropFilter = lightBlur;
+            });
+        }
+
+        // 初始化毛玻璃效果
+        function initBlurEffect() {
+            const savedIntensity = data.blurIntensity || 25;
+            document.getElementById('blurIntensitySlider').value = savedIntensity;
+            document.getElementById('blurIntensityValue').textContent = savedIntensity + 'px';
+            applyBlurEffect(savedIntensity);
         }
 
         // ==================== 拖拽功能 ====================
@@ -2112,6 +2693,8 @@
             data.linkStats[linkId].clickCount++;
             data.linkStats[linkId].lastVisit = Date.now();
             saveData();
+            // 更新最近使用区域
+            renderRecentLinks();
         }
 
         // 格式化时间
@@ -2129,8 +2712,62 @@
             return new Date(timestamp).toLocaleDateString();
         }
 
+        // 渲染侧边栏
+        function renderSidebar() {
+            const container = document.getElementById('sidebarGroups');
+            container.innerHTML = '';
+
+            // 添加"全部"选项
+            const allGroup = document.createElement('div');
+            allGroup.className = 'sidebar-group' + (currentGroupId === null ? ' active' : '');
+            allGroup.innerHTML = `
+                <div class="sidebar-group-name">📚 全部分组</div>
+                <div class="sidebar-group-count">${data.links.length}</div>
+            `;
+            allGroup.onclick = () => switchGroup(null);
+            container.appendChild(allGroup);
+
+            // 按order排序
+            const sortedGroups = [...data.groups].sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 999;
+                const orderB = b.order !== undefined ? b.order : 999;
+                return orderA - orderB;
+            });
+
+            sortedGroups.forEach(group => {
+                const linkCount = data.links.filter(link => link.groupId === group.id).length;
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'sidebar-group' + (currentGroupId === group.id ? ' active' : '');
+                
+                groupDiv.innerHTML = `
+                    <div class="sidebar-group-name">${group.name}</div>
+                    <div class="sidebar-group-count">${linkCount}</div>
+                    <div class="sidebar-group-actions">
+                        <button class="sidebar-group-action-btn" onclick="event.stopPropagation(); openEditGroupModal(${group.id})" title="编辑">✏️</button>
+                        <button class="sidebar-group-action-btn" onclick="event.stopPropagation(); deleteGroup(${group.id})" title="删除">🗑️</button>
+                    </div>
+                `;
+                
+                groupDiv.onclick = () => switchGroup(group.id);
+                container.appendChild(groupDiv);
+            });
+        }
+
+        // 切换分组
+        function switchGroup(groupId) {
+            currentGroupId = groupId;
+            renderSidebar();
+            renderGroups();
+        }
+
         // 渲染最近使用区域
-        function renderRecentLinks(container) {
+        function renderRecentLinks() {
+            // 移除旧的最近使用区域（如果存在）
+            const oldSection = document.querySelector('.recent-section');
+            if (oldSection) {
+                oldSection.remove();
+            }
+
             // 获取有点击记录的链接
             const linksWithStats = data.links
                 .filter(link => data.linkStats[link.id] && data.linkStats[link.id].clickCount > 0)
@@ -2142,12 +2779,12 @@
                     // 按最后访问时间排序
                     return b.stats.lastVisit - a.stats.lastVisit;
                 })
-                .slice(0, 6); // 只显示前6个
+                .slice(0, 8); // 显示前8个
 
             if (linksWithStats.length === 0) return;
 
             const recentSection = document.createElement('div');
-            recentSection.className = 'recent-section group';
+            recentSection.className = 'recent-section';
             
             recentSection.innerHTML = `
                 <div class="recent-header">
@@ -2157,29 +2794,91 @@
                 <div class="recent-links" id="recentLinksContainer"></div>
             `;
             
-            container.appendChild(recentSection);
+            // 添加到body末尾
+            document.body.appendChild(recentSection);
             
             const recentLinksContainer = document.getElementById('recentLinksContainer');
             linksWithStats.forEach((link, index) => {
-                const linkCard = document.createElement('div');
-                linkCard.className = 'link-card recent-link-card';
+                const linkCardWrapper = document.createElement('div');
+                linkCardWrapper.className = 'recent-link-card';
                 
                 const isHot = link.stats.clickCount >= 5;
                 const lastVisitText = formatTimeAgo(link.stats.lastVisit);
                 
-                linkCard.innerHTML = `
+                linkCardWrapper.innerHTML = `
                     ${isHot ? '<div class="hot-badge">🔥 HOT</div>' : ''}
-                    <a href="${link.url}" target="_blank" onclick="trackLinkClick(${link.id})">
-                        <div class="link-name">${link.name}</div>
-                        <div class="link-url">${link.url}</div>
-                        <div class="link-stats">
-                            <span class="click-count-badge">🔥 ${link.stats.clickCount} 次</span>
-                            <span class="last-visit-badge">⏰ ${lastVisitText}</span>
-                        </div>
-                    </a>
+                    <div class="link-card">
+                        <a href="${link.url}" target="_blank" onclick="trackLinkClick(${link.id})">
+                            <div class="link-name">${link.name}</div>
+                            <div class="link-url">${link.url}</div>
+                            <div class="link-stats">
+                                <span class="click-count-badge">🔥 ${link.stats.clickCount} 次</span>
+                                <span class="last-visit-badge">⏰ ${lastVisitText}</span>
+                            </div>
+                        </a>
+                    </div>
                 `;
-                recentLinksContainer.appendChild(linkCard);
+                recentLinksContainer.appendChild(linkCardWrapper);
             });
+        }
+
+        // 初始化侧边栏调整功能
+        function initSidebarResizer() {
+            const sidebar = document.getElementById('sidebar');
+            const resizer = document.getElementById('sidebarResizer');
+            const container = document.querySelector('.container');
+            const recentSection = document.querySelector('.recent-section');
+            
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            // 从localStorage加载保存的宽度
+            const savedWidth = localStorage.getItem('sidebarWidth');
+            if (savedWidth) {
+                setSidebarWidth(parseInt(savedWidth));
+            }
+
+            resizer.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = sidebar.offsetWidth;
+                resizer.classList.add('active');
+                document.body.style.cursor = 'ew-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const deltaX = e.clientX - startX;
+                const newWidth = startWidth + deltaX;
+
+                // 限制最小和最大宽度
+                if (newWidth >= 150 && newWidth <= 400) {
+                    setSidebarWidth(newWidth);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('active');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    
+                    // 保存宽度到localStorage
+                    localStorage.setItem('sidebarWidth', sidebar.offsetWidth);
+                }
+            });
+
+            function setSidebarWidth(width) {
+                sidebar.style.width = width + 'px';
+                container.style.marginLeft = (width + 20) + 'px';
+                if (recentSection) {
+                    recentSection.style.left = (width + 20) + 'px';
+                }
+            }
         }
 
         // 页面加载时初始化
