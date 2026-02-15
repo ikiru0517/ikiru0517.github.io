@@ -97,6 +97,84 @@
             padding-right: 15px;
         }
 
+        /* 排序控制面板 - 紧凑版 */
+        .sort-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sort-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn {
+            padding: 6px 12px;
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .sort-btn:hover {
+            background: rgba(102, 126, 234, 0.08);
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .sort-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .sort-order-btn {
+            padding: 6px 10px;
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+        }
+
+        .sort-order-btn:hover {
+            background: rgba(102, 126, 234, 0.08);
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .sort-order-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
         /* 侧边栏样式 */
         .sidebar {
             position: fixed;
@@ -927,6 +1005,42 @@
             gap: 8px;
         }
 
+        /* 简化版添加按钮区域 */
+        .links-view-header-simple {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            animation: fadeIn 0.5s ease-out;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-add-link-simple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-add-link-simple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 18px rgba(102, 126, 234, 0.35);
+        }
+
+        .btn-add-link-simple:active {
+            transform: translateY(0);
+        }
+
         .links-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1092,6 +1206,10 @@
             position: relative;
             cursor: move;
             overflow: hidden;
+        }
+
+        .link-card[draggable="false"] {
+            cursor: default;
         }
 
         .link-card::before {
@@ -1713,7 +1831,11 @@
             linkStats: {}, // 存储每个链接的统计信息 { linkId: { clickCount: 0, lastVisit: timestamp } }
             blurIntensity: 25, // 毛玻璃模糊强度 (0-50)
             siteTitle: '🤖 AI 网址导航',
-            siteSubtitle: '你的个人AI工具收藏夹'
+            siteSubtitle: '你的个人AI工具收藏夹',
+            sortConfig: { // 排序配置
+                type: 'default', // 'default', 'name', 'clicks', 'recent'
+                order: 'desc' // 'asc' 或 'desc'
+            }
         };
 
         let editingLinkId = null;
@@ -1845,6 +1967,10 @@
                 if (data.blurIntensity === undefined) {
                     data.blurIntensity = 25;
                 }
+                // 确保排序配置存在
+                if (!data.sortConfig) {
+                    data.sortConfig = { type: 'default', order: 'desc' };
+                }
             } else {
                 // 默认数据
                 data = {
@@ -1892,6 +2018,40 @@
                 return;
             }
 
+            // 在显示所有分组前，添加全局排序控制头部
+            const globalHeaderDiv = document.createElement('div');
+            globalHeaderDiv.className = 'links-view-header-simple';
+            globalHeaderDiv.style.marginBottom = '20px';
+            globalHeaderDiv.innerHTML = `
+                <div class="sort-controls">
+                    <div class="sort-label">
+                        <span>📊</span>
+                        <span>排序:</span>
+                    </div>
+                    <div class="sort-buttons">
+                        <button class="sort-btn ${data.sortConfig.type === 'default' ? 'active' : ''}" data-sort="default" onclick="changeSortType('default')">
+                            📌 默认
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'name' ? 'active' : ''}" data-sort="name" onclick="changeSortType('name')">
+                            🔤 名称
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'clicks' ? 'active' : ''}" data-sort="clicks" onclick="changeSortType('clicks')">
+                            🔥 访问
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'recent' ? 'active' : ''}" data-sort="recent" onclick="changeSortType('recent')">
+                            ⏰ 时间
+                        </button>
+                    </div>
+                    <button class="sort-order-btn ${data.sortConfig.order === 'asc' ? 'active' : ''}" onclick="toggleSortOrder()" title="切换排序方向">
+                        <span>${data.sortConfig.order === 'asc' ? '⬆️' : '⬇️'}</span>
+                    </button>
+                </div>
+                <button class="btn-add-link-simple" onclick="openAddLinkModal()">
+                    ➕ 添加网址
+                </button>
+            `;
+            container.appendChild(globalHeaderDiv);
+
             // 显示所有分组（默认状态）
             const sortedGroups = [...data.groups].sort((a, b) => {
                 const orderA = a.order !== undefined ? a.order : 999;
@@ -1905,12 +2065,7 @@
                 groupDiv.draggable = true;
                 groupDiv.dataset.groupId = group.id;
                 
-                const groupLinks = data.links.filter(link => link.groupId === group.id)
-                    .sort((a, b) => {
-                        const orderA = a.order !== undefined ? a.order : 999;
-                        const orderB = b.order !== undefined ? b.order : 999;
-                        return orderA - orderB;
-                    });
+                const groupLinks = sortLinks(data.links.filter(link => link.groupId === group.id));
                 
                 const isCollapsed = data.collapsedGroups.includes(group.id);
                 
@@ -1949,27 +2104,38 @@
 
         // 渲染分组的所有链接（无分组容器）
         function renderGroupLinks(group, container) {
-            const groupLinks = data.links.filter(link => link.groupId === group.id)
-                .sort((a, b) => {
-                    const orderA = a.order !== undefined ? a.order : 999;
-                    const orderB = b.order !== undefined ? b.order : 999;
-                    return orderA - orderB;
-                });
+            const groupLinks = sortLinks(data.links.filter(link => link.groupId === group.id));
 
-            // 创建标题区域
+            // 创建简化的添加按钮区域，并集成排序控制
             const headerDiv = document.createElement('div');
-            headerDiv.className = 'links-view-header';
+            headerDiv.className = 'links-view-header-simple';
             headerDiv.innerHTML = `
-                <div class="links-view-title">
-                    <span class="links-view-icon">📁</span>
-                    <h2>${group.name}</h2>
-                </div>
-                <div class="links-view-actions">
-                    <button class="btn" onclick="openAddLinkModal()">
-                        <span>➕</span>
-                        <span>添加网址</span>
+                <div class="sort-controls">
+                    <div class="sort-label">
+                        <span>📊</span>
+                        <span>排序:</span>
+                    </div>
+                    <div class="sort-buttons">
+                        <button class="sort-btn ${data.sortConfig.type === 'default' ? 'active' : ''}" data-sort="default" onclick="changeSortType('default')">
+                            📌 默认
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'name' ? 'active' : ''}" data-sort="name" onclick="changeSortType('name')">
+                            🔤 名称
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'clicks' ? 'active' : ''}" data-sort="clicks" onclick="changeSortType('clicks')">
+                            🔥 访问
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'recent' ? 'active' : ''}" data-sort="recent" onclick="changeSortType('recent')">
+                            ⏰ 时间
+                        </button>
+                    </div>
+                    <button class="sort-order-btn ${data.sortConfig.order === 'asc' ? 'active' : ''}" onclick="toggleSortOrder()" title="切换排序方向">
+                        <span>${data.sortConfig.order === 'asc' ? '⬆️' : '⬇️'}</span>
                     </button>
                 </div>
+                <button class="btn-add-link-simple" onclick="openAddLinkModal()">
+                    ➕ 添加网址
+                </button>
             `;
             container.appendChild(headerDiv);
 
@@ -1979,11 +2145,16 @@
             linksGrid.id = `links-grid-${group.id}`;
 
             if (groupLinks.length === 0) {
-                linksGrid.innerHTML = '<div class="empty-group">暂无网址，点击上方"添加网址"按钮添加</div>';
+                linksGrid.innerHTML = '<div class="empty-group">暂无网址，点击"添加网址"按钮添加</div>';
             } else {
                 groupLinks.forEach(link => {
                     const linkCard = createLinkCard(link);
                     linksGrid.appendChild(linkCard);
+                    
+                    // 只在默认排序模式下添加拖拽事件
+                    if (data.sortConfig.type === 'default') {
+                        setupLinkDragEventsForGrid(linkCard, group.id);
+                    }
                 });
             }
 
@@ -1995,6 +2166,8 @@
             const linkCard = document.createElement('div');
             linkCard.className = 'link-card';
             linkCard.dataset.linkId = link.id;
+            // 只在默认排序模式下允许拖拽
+            linkCard.draggable = data.sortConfig.type === 'default';
 
             // 获取统计信息
             const stats = data.linkStats[link.id] || { clickCount: 0, lastVisit: null };
@@ -2028,7 +2201,8 @@
             
             const linkCard = document.createElement('div');
             linkCard.className = 'link-card';
-            linkCard.draggable = true;
+            // 只在默认排序模式下允许拖拽
+            linkCard.draggable = data.sortConfig.type === 'default';
             linkCard.dataset.linkId = link.id;
             
             // 获取统计信息
@@ -2051,8 +2225,10 @@
             `;
             linksContainer.appendChild(linkCard);
             
-            // 添加链接拖拽事件
-            setupLinkDragEvents(linkCard);
+            // 只在默认排序模式下添加链接拖拽事件
+            if (data.sortConfig.type === 'default') {
+                setupLinkDragEvents(linkCard);
+            }
         }
 
         // 更新分组选择器
@@ -2630,6 +2806,127 @@
             }
         }
 
+        // 为 links-grid 中的链接设置拖拽事件（用于单个分组视图）
+        function setupLinkDragEventsForGrid(linkCard, groupId) {
+            linkCard.addEventListener('dragstart', (e) => {
+                draggedElement = linkCard;
+                draggedType = 'link';
+                draggedId = parseInt(linkCard.dataset.linkId);
+                linkCard.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            linkCard.addEventListener('dragend', () => {
+                linkCard.classList.remove('dragging');
+                document.querySelectorAll('.link-card').forEach(card => {
+                    card.classList.remove('drag-over');
+                });
+                draggedElement = null;
+                draggedType = null;
+                draggedId = null;
+            });
+
+            linkCard.addEventListener('dragover', (e) => {
+                if (draggedType !== 'link') return;
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const linksGrid = linkCard.parentElement;
+                const afterElement = getDragAfterElementGrid(linksGrid, e.clientX, e.clientY);
+                
+                if (afterElement == null) {
+                    linksGrid.appendChild(draggedElement);
+                } else {
+                    linksGrid.insertBefore(draggedElement, afterElement);
+                }
+            });
+
+            linkCard.addEventListener('drop', (e) => {
+                if (draggedType !== 'link') return;
+                e.preventDefault();
+                e.stopPropagation();
+                
+                reorderLinksInGrid(groupId);
+            });
+
+            // 链接网格容器也需要处理拖放
+            const linksGrid = linkCard.parentElement;
+            if (!linksGrid.dataset.dragListenerAdded) {
+                linksGrid.dataset.dragListenerAdded = 'true';
+                
+                linksGrid.addEventListener('dragover', (e) => {
+                    if (draggedType !== 'link') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+
+                linksGrid.addEventListener('drop', (e) => {
+                    if (draggedType !== 'link') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // 如果容器是空的或拖到空白处
+                    if (linksGrid.children.length === 0 || !e.target.classList.contains('link-card')) {
+                        linksGrid.appendChild(draggedElement);
+                    }
+                    
+                    reorderLinksInGrid(groupId);
+                });
+            }
+        }
+
+        // 获取拖拽后的位置（用于网格布局）
+        function getDragAfterElementGrid(container, x, y) {
+            const draggableElements = [...container.querySelectorAll('.link-card:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const centerX = box.left + box.width / 2;
+                const centerY = box.top + box.height / 2;
+                
+                // 计算鼠标位置与元素中心的距离
+                const offsetX = x - centerX;
+                const offsetY = y - centerY;
+                const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+                
+                // 判断鼠标是否在元素的后半部分
+                const isAfter = (offsetX > 0 && Math.abs(offsetY) < box.height / 2) || 
+                               (offsetY > 0 && Math.abs(offsetX) < box.width / 2);
+
+                if (isAfter && distance < closest.distance) {
+                    return { distance: distance, element: child };
+                } else {
+                    return closest;
+                }
+            }, { distance: Number.POSITIVE_INFINITY }).element;
+        }
+
+        // 重新排序链接（用于 links-grid）
+        function reorderLinksInGrid(groupId) {
+            const draggedLink = data.links.find(l => l.id === draggedId);
+            if (!draggedLink) return;
+
+            // 更新链接的groupId
+            draggedLink.groupId = groupId;
+
+            // 重新排序该分组下的所有链接
+            const linksGrid = document.getElementById(`links-grid-${groupId}`);
+            const linkElements = linksGrid.querySelectorAll('.link-card');
+            
+            linkElements.forEach((el, index) => {
+                const linkId = parseInt(el.dataset.linkId);
+                const link = data.links.find(l => l.id === linkId);
+                if (link) {
+                    link.order = index;
+                    link.groupId = groupId;
+                }
+            });
+
+            saveData();
+            // 重新渲染以确保显示正确
+            renderGroups();
+        }
+
         // 获取拖拽后的位置
         function getDragAfterElement(container, y, type) {
             const selector = type === 'group' ? '.group:not(.dragging)' : '.link-card:not(.dragging)';
@@ -2717,11 +3014,11 @@
             const container = document.getElementById('sidebarGroups');
             container.innerHTML = '';
 
-            // 添加"全部"选项
+            // 添加"Hub"选项
             const allGroup = document.createElement('div');
             allGroup.className = 'sidebar-group' + (currentGroupId === null ? ' active' : '');
             allGroup.innerHTML = `
-                <div class="sidebar-group-name">📚 全部分组</div>
+                <div class="sidebar-group-name">🏠 Hub</div>
                 <div class="sidebar-group-count">${data.links.length}</div>
             `;
             allGroup.onclick = () => switchGroup(null);
@@ -2879,6 +3176,75 @@
                     recentSection.style.left = (width + 20) + 'px';
                 }
             }
+        }
+
+        // ========== 排序功能 ==========
+        
+        // 更新排序UI状态
+        // 改变排序类型
+        function changeSortType(sortType) {
+            data.sortConfig.type = sortType;
+            saveData();
+            renderGroups();
+        }
+        
+        // 切换排序方向
+        function toggleSortOrder() {
+            data.sortConfig.order = data.sortConfig.order === 'asc' ? 'desc' : 'asc';
+            saveData();
+            renderGroups();
+        }
+        
+        // 对链接进行排序
+        function sortLinks(links) {
+            const sortType = data.sortConfig.type;
+            const sortOrder = data.sortConfig.order;
+            
+            // 创建副本以避免修改原数组
+            const sortedLinks = [...links];
+            
+            switch(sortType) {
+                case 'name':
+                    // 按名称排序
+                    sortedLinks.sort((a, b) => {
+                        const comparison = a.name.localeCompare(b.name, 'zh-CN');
+                        return sortOrder === 'asc' ? comparison : -comparison;
+                    });
+                    break;
+                    
+                case 'clicks':
+                    // 按访问次数排序
+                    sortedLinks.sort((a, b) => {
+                        const aClicks = data.linkStats[a.id]?.clickCount || 0;
+                        const bClicks = data.linkStats[b.id]?.clickCount || 0;
+                        const comparison = aClicks - bClicks;
+                        return sortOrder === 'asc' ? comparison : -comparison;
+                    });
+                    break;
+                    
+                case 'recent':
+                    // 按最近访问时间排序
+                    sortedLinks.sort((a, b) => {
+                        const aTime = data.linkStats[a.id]?.lastVisit || 0;
+                        const bTime = data.linkStats[b.id]?.lastVisit || 0;
+                        const comparison = aTime - bTime;
+                        return sortOrder === 'asc' ? comparison : -comparison;
+                    });
+                    break;
+                    
+                case 'default':
+                default:
+                    // 默认排序（按order字段）
+                    sortedLinks.sort((a, b) => {
+                        const orderA = a.order !== undefined ? a.order : 999;
+                        const orderB = b.order !== undefined ? b.order : 999;
+                        const comparison = orderA - orderB;
+                        return sortOrder === 'asc' ? comparison : -comparison;
+                    });
+                    break;
+            }
+            
+            return sortedLinks;
         }
 
         // 页面加载时初始化
