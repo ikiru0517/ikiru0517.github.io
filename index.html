@@ -1097,11 +1097,6 @@
             outline: none;
             transition: all 0.3s;
         }
-
-        input[type="range"]:hover {
-            background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(102, 126, 234, 0.7) 100%);
-        }
-
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
@@ -1113,26 +1108,16 @@
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
             transition: all 0.3s;
         }
-
         input[type="range"]::-webkit-slider-thumb:hover {
             transform: scale(1.2);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
         }
-
         input[type="range"]::-moz-range-thumb {
             width: 18px;
             height: 18px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
             border: none;
-            transition: all 0.3s;
-        }
-
-        input[type="range"]::-moz-range-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
         }
 
         .groups {
@@ -1865,27 +1850,51 @@
                     <span>恢复默认</span>
                 </button>
             </div>
-            
             <!-- 毛玻璃效果控制 -->
-            <div class="blur-control" style="margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <label style="font-weight: 600; color: #2d3748; font-size: 0.95em;">
-                        ❄️ 毛玻璃效果
-                    </label>
-                    <span id="blurIntensityValue" style="font-weight: 600; color: #667eea; font-size: 0.9em;">25px</span>
+            <div class="control-section">
+                <div class="control-section-title">
+                    <span>❄️</span>
+                    <span>毛玻璃效果</span>
                 </div>
-                <input 
-                    type="range" 
-                    id="blurIntensitySlider" 
-                    min="0" 
-                    max="50" 
-                    value="25" 
-                    style="width: 100%; cursor: pointer;"
-                    oninput="updateBlurIntensity(this.value)"
-                />
-                <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.8em; color: #718096;">
-                    <span>关闭</span>
-                    <span>最强</span>
+                <div style="padding: 0 4px;">
+                    <!-- 背景模糊 -->
+                    <div style="margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-size: 0.85em; color: #718096;">🖼️ 背景模糊</span>
+                            <span id="bgBlurValue" style="font-weight: 600; color: #667eea; font-size: 0.9em;">关闭</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            id="bgBlurSlider" 
+                            min="0" 
+                            max="25" 
+                            value="0" 
+                            style="width: 100%; cursor: pointer;"
+                            oninput="updateBgBlur(this.value)"
+                        />
+                        <div style="display: flex; justify-content: space-between; margin-top: 3px; font-size: 0.75em; color: #a0aec0;">
+                            <span>无</span><span>最强</span>
+                        </div>
+                    </div>
+                    <!-- 侧边栏模糊 -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-size: 0.85em; color: #718096;">📋 侧边栏模糊</span>
+                            <span id="sidebarBlurValue" style="font-weight: 600; color: #667eea; font-size: 0.9em;">关闭</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            id="sidebarBlurSlider" 
+                            min="0" 
+                            max="25" 
+                            value="0" 
+                            style="width: 100%; cursor: pointer;"
+                            oninput="updateSidebarBlur(this.value)"
+                        />
+                        <div style="display: flex; justify-content: space-between; margin-top: 3px; font-size: 0.75em; color: #a0aec0;">
+                            <span>无</span><span>最强</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2022,7 +2031,8 @@
             },
             collapsedGroups: [], // 存储折叠的分组ID
             linkStats: {}, // 存储每个链接的统计信息 { linkId: { clickCount: 0, lastVisit: timestamp } }
-            blurIntensity: 25, // 毛玻璃模糊强度 (0-50)
+            bgBlur: 0,      // 背景模糊强度 (0-25，0=关闭)
+            sidebarBlur: 0, // 侧边栏模糊强度 (0-25，0=关闭)
             siteTitle: '🤖 AI 网址导航',
             siteSubtitle: '你的个人AI工具收藏夹',
             sortConfig: { // 排序配置
@@ -2156,9 +2166,12 @@
                 if (!data.siteSubtitle) {
                     data.siteSubtitle = '你的个人AI工具收藏夹';
                 }
-                // 确保毛玻璃强度存在
-                if (data.blurIntensity === undefined) {
-                    data.blurIntensity = 25;
+                // 确保毛玻璃强度存在（兼容旧数据）
+                if (data.bgBlur === undefined) {
+                    data.bgBlur = data.blurIntensity || 0;
+                }
+                if (data.sidebarBlur === undefined) {
+                    data.sidebarBlur = data.blurIntensity || 0;
                 }
                 // 确保排序配置存在
                 if (!data.sortConfig) {
@@ -2728,57 +2741,58 @@
             }
         }
 
-        // 更新毛玻璃效果强度
-        function updateBlurIntensity(value) {
-            data.blurIntensity = parseInt(value);
-            document.getElementById('blurIntensityValue').textContent = value + 'px';
-            applyBlurEffect(value);
+        // 更新背景模糊强度
+        function updateBgBlur(value) {
+            value = parseInt(value);
+            data.bgBlur = value;
+            const label = value === 0 ? '关闭' : value + 'px';
+            document.getElementById('bgBlurValue').textContent = label;
+            applyBgBlur(value);
             saveData();
         }
 
-        // 应用毛玻璃效果
-        function applyBlurEffect(intensity) {
+        // 更新侧边栏模糊强度
+        function updateSidebarBlur(value) {
+            value = parseInt(value);
+            data.sidebarBlur = value;
+            const label = value === 0 ? '关闭' : value + 'px';
+            document.getElementById('sidebarBlurValue').textContent = label;
+            applySidebarBlur(value);
+            saveData();
+        }
+
+        // 应用背景模糊
+        function applyBgBlur(intensity) {
+            intensity = parseInt(intensity) || 0;
+            const overlay = document.querySelector('.background-overlay');
+            if (overlay) {
+                overlay.style.backdropFilter = intensity > 0 ? `blur(${intensity}px)` : 'none';
+                overlay.style.webkitBackdropFilter = intensity > 0 ? `blur(${intensity}px)` : 'none';
+            }
+        }
+
+        // 应用侧边栏模糊
+        function applySidebarBlur(intensity) {
+            intensity = parseInt(intensity) || 0;
             const sidebar = document.getElementById('sidebar');
-            const recentSection = document.querySelector('.recent-section');
-            const groups = document.querySelectorAll('.group');
-            const linkCards = document.querySelectorAll('.link-card');
-            
-            // 计算饱和度（基础180%）
-            const saturate = intensity > 0 ? 180 : 100;
-            const blurValue = intensity > 0 ? `blur(${intensity}px) saturate(${saturate}%)` : 'none';
-            
-            // 应用到侧边栏
             if (sidebar) {
-                sidebar.style.backdropFilter = blurValue;
-                sidebar.style.webkitBackdropFilter = blurValue;
+                const saturate = intensity > 0 ? ` saturate(${Math.round(100 + intensity * 3.2)}%)` : '';
+                const blurVal = intensity > 0 ? `blur(${intensity}px)${saturate}` : 'none';
+                sidebar.style.backdropFilter = blurVal;
+                sidebar.style.webkitBackdropFilter = blurVal;
             }
-            
-            // 应用到最近使用区域
-            if (recentSection) {
-                recentSection.style.backdropFilter = blurValue;
-                recentSection.style.webkitBackdropFilter = blurValue;
-            }
-            
-            // 应用到分组卡片
-            groups.forEach(group => {
-                group.style.backdropFilter = intensity > 0 ? `blur(${Math.min(intensity / 2.5, 10)}px)` : 'none';
-                group.style.webkitBackdropFilter = intensity > 0 ? `blur(${Math.min(intensity / 2.5, 10)}px)` : 'none';
-            });
-            
-            // 应用到链接卡片（轻微效果）
-            linkCards.forEach(card => {
-                const lightBlur = intensity > 0 ? `blur(${Math.min(intensity / 4, 5)}px)` : 'none';
-                card.style.backdropFilter = lightBlur;
-                card.style.webkitBackdropFilter = lightBlur;
-            });
         }
 
         // 初始化毛玻璃效果
         function initBlurEffect() {
-            const savedIntensity = data.blurIntensity || 25;
-            document.getElementById('blurIntensitySlider').value = savedIntensity;
-            document.getElementById('blurIntensityValue').textContent = savedIntensity + 'px';
-            applyBlurEffect(savedIntensity);
+            const bgIntensity = data.bgBlur || 0;
+            const sidebarIntensity = data.sidebarBlur || 0;
+            document.getElementById('bgBlurSlider').value = bgIntensity;
+            document.getElementById('bgBlurValue').textContent = bgIntensity === 0 ? '关闭' : bgIntensity + 'px';
+            document.getElementById('sidebarBlurSlider').value = sidebarIntensity;
+            document.getElementById('sidebarBlurValue').textContent = sidebarIntensity === 0 ? '关闭' : sidebarIntensity + 'px';
+            applyBgBlur(bgIntensity);
+            applySidebarBlur(sidebarIntensity);
         }
 
         // ==================== 拖拽功能 ====================
