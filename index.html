@@ -13,14 +13,44 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #f5f5f0;
+            background-image:
+                /* 漫画网点 - 大 */
+                radial-gradient(circle, #1a1a1a 1.2px, transparent 1.2px),
+                /* 漫画网点 - 小 */
+                radial-gradient(circle, #333 0.6px, transparent 0.6px),
+                /* 速度线纹理（斜线组） */
+                repeating-linear-gradient(
+                    -55deg,
+                    transparent,
+                    transparent 18px,
+                    rgba(0,0,0,0.04) 18px,
+                    rgba(0,0,0,0.04) 19px
+                ),
+                repeating-linear-gradient(
+                    35deg,
+                    transparent,
+                    transparent 32px,
+                    rgba(0,0,0,0.025) 32px,
+                    rgba(0,0,0,0.025) 33px
+                );
+            background-size:
+                28px 28px,
+                14px 14px,
+                100% 100%,
+                100% 100%;
+            background-position:
+                0 0,
+                7px 7px,
+                0 0,
+                0 0;
             min-height: 100vh;
             padding: 15px;
             position: relative;
             overflow-x: hidden;
         }
 
-        /* 添加动态背景粒子效果 */
+        /* 漫画风格角落爆炸装饰 */
         body::before {
             content: '';
             position: fixed;
@@ -28,13 +58,28 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
-            animation: float 15s ease-in-out infinite;
+            background:
+                /* 左上角光晕 */
+                radial-gradient(ellipse at -5% -5%, rgba(255,255,255,0.85) 0%, transparent 45%),
+                /* 右下角阴影 */
+                radial-gradient(ellipse at 105% 105%, rgba(0,0,0,0.12) 0%, transparent 45%),
+                /* 右上角光晕 */
+                radial-gradient(ellipse at 105% -5%, rgba(255,255,255,0.6) 0%, transparent 35%);
             pointer-events: none;
             z-index: 0;
+        }
+
+        /* 漫画粗边框装饰 */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 8px; left: 8px; right: 8px; bottom: 8px;
+            border: 3px solid rgba(0,0,0,0.18);
+            box-shadow:
+                inset 0 0 0 1px rgba(255,255,255,0.6),
+                0 0 0 1px rgba(0,0,0,0.06);
+            pointer-events: none;
+            z-index: 9999;
         }
 
         @keyframes float {
@@ -2702,6 +2747,373 @@
             color: #d97706;
             line-height: 1.4;
         }
+
+        /* ============================================
+           🖤 黑白漫画风格主题覆盖
+           ============================================ */
+
+        /* 标题区域：漫画对话框感觉 */
+        header {
+            color: #1a1a1a !important;
+        }
+
+        h1 {
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: #1a1a1a !important;
+            background-clip: unset !important;
+            text-shadow: 4px 4px 0px rgba(0,0,0,0.15) !important;
+            font-weight: 900 !important;
+            letter-spacing: 2px !important;
+        }
+
+        header p {
+            color: #444 !important;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.1) !important;
+            font-weight: 600 !important;
+            opacity: 1 !important;
+        }
+
+        /* 侧边栏：漫画面板风格 */
+        .sidebar {
+            background: rgba(255,255,255,0.97) !important;
+            border: 2.5px solid #1a1a1a !important;
+            box-shadow: 5px 5px 0px #1a1a1a !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border-radius: 4px !important;
+        }
+
+        .sidebar-header {
+            background: #1a1a1a !important;
+            border-radius: 2px !important;
+            border-left: none !important;
+            box-shadow: none !important;
+        }
+
+        .sidebar-header * {
+            color: #fff !important;
+        }
+
+        .sidebar-group-item {
+            border: 1.5px solid transparent !important;
+            border-radius: 3px !important;
+        }
+
+        .sidebar-group-item:hover,
+        .sidebar-group-item.active {
+            background: #1a1a1a !important;
+            color: #fff !important;
+            border-color: #1a1a1a !important;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.3) !important;
+        }
+
+        .sidebar-group-item:hover *,
+        .sidebar-group-item.active * {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+
+        /* 搜索框：漫画边框 */
+        .search-wrapper {
+            border: 2.5px solid #1a1a1a !important;
+            border-radius: 4px !important;
+            box-shadow: 4px 4px 0px #1a1a1a !important;
+            background: #fff !important;
+            backdrop-filter: none !important;
+        }
+
+        .search-wrapper:hover,
+        .search-wrapper:focus-within {
+            box-shadow: 5px 5px 0px #1a1a1a !important;
+            transform: translate(-1px, -1px);
+        }
+
+        .search-engine-selector {
+            border-right: 2px solid #1a1a1a !important;
+        }
+
+        .search-engine-name, .search-engine-arrow {
+            color: #1a1a1a !important;
+        }
+
+        .search-button {
+            background: #1a1a1a !important;
+            border-radius: 2px !important;
+            box-shadow: none !important;
+        }
+
+        .search-button:hover {
+            background: #333 !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* 分组卡片：漫画格子面板 */
+        .group {
+            background: #fff !important;
+            border: 2.5px solid #1a1a1a !important;
+            border-radius: 4px !important;
+            box-shadow: 5px 5px 0px #1a1a1a !important;
+            backdrop-filter: none !important;
+            transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+        }
+
+        .group:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: 7px 7px 0px #1a1a1a !important;
+            border-color: #1a1a1a !important;
+        }
+
+        .group::before {
+            background: #1a1a1a !important;
+            height: 4px !important;
+        }
+
+        .group:hover::before {
+            transform: scaleX(1) !important;
+        }
+
+        .group-header {
+            border-bottom: 2px solid #e0e0e0 !important;
+        }
+
+        .group-header:hover {
+            border-bottom-color: #1a1a1a !important;
+        }
+
+        .group-title {
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: #1a1a1a !important;
+            background-clip: unset !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.5px !important;
+        }
+
+        .collapse-icon {
+            color: #1a1a1a !important;
+            filter: none !important;
+        }
+
+        .drag-handle {
+            color: #aaa !important;
+        }
+
+        .drag-handle:hover {
+            color: #1a1a1a !important;
+        }
+
+        .group.drag-over {
+            border: 2.5px dashed #1a1a1a !important;
+            background: rgba(0,0,0,0.03) !important;
+        }
+
+        /* 链接卡片：漫画小格子 */
+        .link-card {
+            background: #fff !important;
+            border: 2px solid #1a1a1a !important;
+            border-radius: 3px !important;
+            box-shadow: 3px 3px 0px #1a1a1a !important;
+            transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+        }
+
+        .link-card:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: 5px 5px 0px #1a1a1a !important;
+            border-color: #1a1a1a !important;
+        }
+
+        .link-card::before {
+            display: none !important;
+        }
+
+        .link-name {
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: #1a1a1a !important;
+            background-clip: unset !important;
+            font-weight: 800 !important;
+        }
+
+        .link-url {
+            color: #555 !important;
+        }
+
+        .link-stats .click-count-badge {
+            background: #1a1a1a !important;
+            color: #fff !important;
+            border-color: #1a1a1a !important;
+        }
+
+        .link-stats .last-visit-badge {
+            background: #f0f0f0 !important;
+            color: #333 !important;
+            border: 1px solid #ccc !important;
+        }
+
+        /* 按钮：漫画印刷风格 */
+        .btn {
+            border-radius: 3px !important;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.3) !important;
+            transition: transform 0.1s, box-shadow 0.1s !important;
+        }
+
+        .btn:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.35) !important;
+        }
+
+        .btn-add-link-simple,
+        .btn {
+            background: #1a1a1a !important;
+            border: 2px solid #1a1a1a !important;
+            color: #fff !important;
+            border-radius: 3px !important;
+        }
+
+        .btn-delete {
+            background: #fff !important;
+            color: #1a1a1a !important;
+            border: 2px solid #1a1a1a !important;
+            box-shadow: 2px 2px 0px #1a1a1a !important;
+        }
+
+        .btn-delete:hover {
+            background: #1a1a1a !important;
+            color: #fff !important;
+        }
+
+        .btn-edit {
+            background: #555 !important;
+            border: 2px solid #555 !important;
+            box-shadow: 2px 2px 0px #333 !important;
+        }
+
+        .btn-cancel {
+            background: #f0f0f0 !important;
+            color: #1a1a1a !important;
+            border: 2px solid #aaa !important;
+        }
+
+        .btn-recommend-simple {
+            background: #1a1a1a !important;
+            border: 2px solid #1a1a1a !important;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.4) !important;
+        }
+
+        /* 排序按钮 */
+        .sort-btn {
+            border: 1.5px solid #1a1a1a !important;
+            color: #1a1a1a !important;
+            border-radius: 3px !important;
+        }
+
+        .sort-btn.active {
+            background: #1a1a1a !important;
+            color: #fff !important;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.3) !important;
+        }
+
+        .sort-order-btn {
+            border: 1.5px solid #1a1a1a !important;
+            color: #1a1a1a !important;
+            border-radius: 3px !important;
+        }
+
+        .sort-order-btn.active {
+            background: #1a1a1a !important;
+            color: #fff !important;
+        }
+
+        /* 模态框 */
+        .modal-content {
+            border: 3px solid #1a1a1a !important;
+            border-radius: 4px !important;
+            box-shadow: 8px 8px 0px #1a1a1a !important;
+        }
+
+        .modal-header {
+            background: #1a1a1a !important;
+            color: #fff !important;
+            border-radius: 0 !important;
+        }
+
+        .modal-header h3, .modal-header * {
+            color: #fff !important;
+        }
+
+        .modal-close {
+            color: #fff !important;
+        }
+
+        /* 设置面板 */
+        .settings-panel {
+            border-left: 3px solid #1a1a1a !important;
+            backdrop-filter: none !important;
+        }
+
+        .control-section-title {
+            background: none !important;
+            background-image: none !important;
+            border-bottom: 3px solid #1a1a1a !important;
+            color: #1a1a1a !important;
+        }
+
+        /* 推荐卡片 */
+        .recommend-card {
+            border: 2px solid #1a1a1a !important;
+            border-radius: 4px !important;
+            box-shadow: 3px 3px 0px #1a1a1a !important;
+            background: #fff !important;
+        }
+
+        .recommend-card:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: 5px 5px 0px #1a1a1a !important;
+        }
+
+        .recommend-add-btn {
+            background: #1a1a1a !important;
+            border-radius: 3px !important;
+            border: 2px solid #1a1a1a !important;
+        }
+
+        .recommend-add-btn.added {
+            background: #555 !important;
+            border-color: #555 !important;
+        }
+
+        /* 侧边栏最近访问标签 */
+        .sidebar-recent-badge {
+            background: #1a1a1a !important;
+            color: #fff !important;
+        }
+
+        .sidebar-recent-time {
+            background: #f0f0f0 !important;
+            color: #333 !important;
+            border-color: #ccc !important;
+        }
+
+        .sidebar-recent-hot {
+            background: #1a1a1a !important;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.4) !important;
+        }
+
+        /* links-view-title 渐变文字 */
+        .links-view-title h2 {
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: #1a1a1a !important;
+            background-clip: unset !important;
+            font-weight: 900 !important;
+        }
+
+        /* 滚动条 */
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #999 !important;
+        }
     </style>
 </head>
 <body>
@@ -3204,6 +3616,9 @@
 
         // 当前选中的分组ID（null表示显示全部）
         let currentGroupId = null;
+
+        // AI推荐结果缓存（避免通过HTML属性传递特殊字符）
+        let recommendedItems = [];
 
         // 初始化
         function init() {
@@ -5144,6 +5559,9 @@
                 return;
             }
 
+            // 缓存到全局，避免通过HTML属性传递特殊字符（如&、'、"、\等）
+            recommendedItems = items;
+
             const existingUrls = new Set(data.links.map(l => {
                 try { return new URL(l.url).hostname; } catch(e) { return l.url; }
             }));
@@ -5222,7 +5640,7 @@
                     <div class="recommend-card-actions">
                         ${alreadyHave
                             ? `<button class="recommend-add-btn added" disabled>已收藏</button>`
-                            : `${selHtml}<button class="recommend-add-btn" id="rec-btn-${idx}" onclick="addRecommendedLink(${idx}, '${escapeForAttr(item.name)}', '${escapeForAttr(item.url)}', '${escapeForAttr(faviconUrl)}')">＋ 添加</button>`
+                            : `${selHtml}<button class="recommend-add-btn" id="rec-btn-${idx}" onclick="addRecommendedLink(${idx})">＋ 添加</button>`
                         }
                         <div class="rec-video-wrap">
                             <button class="rec-video-btn" onclick="toggleVideoPopover(event,'rec-vpop-${idx}')">
@@ -5276,14 +5694,35 @@
             document.querySelectorAll('.rec-video-popover.open').forEach(p => p.classList.remove('open'));
         });
 
-        function addRecommendedLink(idx, name, url, favicon) {
+        function addRecommendedLink(idx) {
+            const item = recommendedItems[idx];
+            if (!item) { alert('推荐数据已失效，请重新生成推荐后再添加。'); return; }
+
             const select = document.getElementById(`rg_${idx}`);
-            const groupId = select ? select.value : (data.groups[0]?.id || null);
+            // 必须用 parseInt，与 saveLink() 保持一致：data.groups 的 id 是数字，
+            // 严格比较（===）时字符串 "1" ≠ 数字 1，导致链接无法渲染到分组
+            const groupId = select ? parseInt(select.value) : (data.groups[0]?.id || null);
             if (!groupId) { alert('请先在侧边栏添加一个分组！'); return; }
 
+            let hostname = '';
+            try { hostname = new URL(item.url).hostname; } catch(e) {}
+            const faviconUrl = hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=64` : '';
+
+            // 与 saveLink() 保持完全一致：id 必须是纯数字，
+            // 否则 renderLink 生成的 onclick="deleteLink(1234_abc)" 是非法 JS
+            const groupLinks = data.links.filter(l => l.groupId === groupId);
+            const maxOrder = groupLinks.length > 0
+                ? Math.max(...groupLinks.map(l => l.order !== undefined ? l.order : 0))
+                : -1;
+
             const newLink = {
-                id: Date.now() + '_' + Math.random().toString(36).slice(2,7),
-                name, url, favicon: favicon || '', groupId,
+                id: Date.now(),
+                name: item.name,
+                url: item.url,
+                groupId,
+                order: maxOrder + 1,
+                favicon: faviconUrl || null,
+                launchDate: null,
             };
             data.links.push(newLink);
             saveData();
