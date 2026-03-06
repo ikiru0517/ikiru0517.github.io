@@ -1,0 +1,5303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI网址导航</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 添加动态背景粒子效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+            animation: float 15s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #videoBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            display: none;
+        }
+
+        #imageBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            display: none;
+        }
+
+        .background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: -1;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        body.has-custom-background {
+            background: transparent;
+        }
+
+        body.has-custom-background .background-overlay {
+            display: block;
+        }
+
+        body.has-custom-background::before {
+            display: none;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            margin-left: 220px;
+            position: relative;
+            z-index: 1;
+            padding-right: 15px;
+        }
+
+        /* 排序控制面板 - 紧凑版 */
+        .sort-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sort-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn {
+            padding: 6px 12px;
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .sort-btn:hover {
+            background: rgba(102, 126, 234, 0.08);
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .sort-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .sort-order-btn {
+            padding: 6px 10px;
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+        }
+
+        .sort-order-btn:hover {
+            background: rgba(102, 126, 234, 0.08);
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .sort-order-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* 上线时间标签 */
+        .link-launch-date {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 6px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+            color: #764ba2;
+            border: 1px solid rgba(118, 75, 162, 0.25);
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            position: fixed;
+            left: 10px;
+            top: 10px;
+            width: 200px;
+            height: calc(100vh - 20px);
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+            overflow-y: auto;
+            padding: 15px 10px 20px 10px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+            pointer-events: none;
+            border-radius: 16px;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 2px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        /* 侧边栏调整手柄 */
+        .sidebar-resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 8px;
+            height: 100%;
+            cursor: ew-resize;
+            z-index: 10;
+            transition: background 0.2s;
+        }
+
+        .sidebar-resizer::before {
+            content: '';
+            position: absolute;
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 40px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-resizer:hover::before {
+            background: rgba(102, 126, 234, 0.4);
+            height: 60px;
+        }
+
+        .sidebar-resizer.active::before {
+            background: rgba(102, 126, 234, 0.6);
+            height: 80px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px 8px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border-radius: 10px;
+            border-left: 3px solid #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.5px;
+            filter: drop-shadow(0 1px 2px rgba(102, 126, 234, 0.2));
+        }
+
+        .sidebar-add-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+        }
+
+        .sidebar-add-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.35);
+        }
+
+        .sidebar-groups {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-group {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.5) 100%);
+            padding: 10px 12px;
+            border-radius: 10px;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-group:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.75) 100%);
+            border-left-color: #667eea;
+            transform: translateX(3px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.15);
+        }
+
+        .sidebar-group.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            border-left-color: #667eea;
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
+            border-left-width: 4px;
+        }
+
+        .sidebar-group-name {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 13px;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-group.active .sidebar-group-name {
+            color: #667eea;
+        }
+
+        .sidebar-group-count {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            color: #667eea;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-right: 6px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            min-width: 28px;
+            text-align: center;
+        }
+
+        .sidebar-group.active .sidebar-group-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+        }
+
+        .sidebar-group-actions {
+            display: none;
+            gap: 3px;
+        }
+
+        .sidebar-group:hover .sidebar-group-actions {
+            display: flex;
+        }
+
+        .sidebar-group-action-btn {
+            background: transparent;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            padding: 3px;
+            border-radius: 3px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-group-action-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        /* 侧边栏最近使用区域 */
+        .sidebar-recent-section {
+            margin-top: 20px;
+            padding: 12px 8px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.15);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.08);
+        }
+
+        .sidebar-recent-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            padding: 8px 8px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .sidebar-recent-header-icon {
+            font-size: 16px;
+            filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
+        }
+
+        .sidebar-recent-header-title {
+            font-size: 14px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.5px;
+        }
+
+        /* 侧边栏最近使用样式 */
+        .sidebar-recent-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0;
+        }
+
+        .sidebar-recent-item {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-recent-item:hover {
+            background: rgba(255, 255, 255, 0.95);
+            border-left-color: #667eea;
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .sidebar-recent-item a {
+            display: block;
+            padding: 10px 12px;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+
+        .sidebar-recent-name {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 13px;
+            margin-bottom: 4px;
+            padding-right: 65px;
+            line-height: 1.3;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+
+        .sidebar-recent-url {
+            font-size: 10px;
+            color: #718096;
+            margin-bottom: 8px;
+            opacity: 0.8;
+            word-wrap: break-word;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .sidebar-recent-stats {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .sidebar-recent-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-recent-clicks {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .sidebar-recent-time {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .sidebar-recent-hot {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 900;
+            box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
+            animation: pulse-hot 2s ease-in-out infinite;
+            letter-spacing: 0.5px;
+        }
+
+        @keyframes pulse-hot {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
+            }
+            50% { 
+                transform: scale(1.08); 
+                box-shadow: 0 5px 15px rgba(239, 68, 68, 0.6);
+            }
+        }
+
+        .sidebar-recent-empty {
+            text-align: center;
+            padding: 30px 20px;
+            color: #718096;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
+
+        .sidebar-recent-empty-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+            opacity: 0.4;
+        }
+
+        /* 响应式 - 小屏幕隐藏侧边栏 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.mobile-active {
+                transform: translateX(0);
+            }
+            
+            .container {
+                margin-left: 0;
+                padding: 0 20px;
+            }
+
+            .recent-section {
+                left: 10px;
+                right: 10px;
+            }
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 25px;
+            position: relative;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        header h1, header p {
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        header h1:hover, header p:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.02);
+        }
+
+        header .editable-input {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: inherit;
+            font-weight: inherit;
+            font-family: inherit;
+            text-align: center;
+            color: #2d3748;
+            outline: none;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        header .editable-input:focus {
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            text-shadow: 0 3px 15px rgba(0,0,0,0.25);
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+        }
+
+        /* 搜索框样式 */
+        .search-container {
+            max-width: 700px;
+            margin: 20px auto;
+            position: relative;
+        }
+
+        .search-wrapper {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 12px;
+            border-radius: 50px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .search-wrapper:hover {
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-wrapper:focus-within {
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .search-engine-selector {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0 12px;
+            cursor: pointer;
+            border-right: 1.5px solid rgba(102, 126, 234, 0.15);
+            min-width: 90px;
+            transition: all 0.3s;
+        }
+
+        .search-engine-selector:hover {
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 20px;
+        }
+
+        .search-engine-icon {
+            font-size: 1.1em;
+        }
+
+        .search-engine-name {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.9em;
+        }
+
+        .search-engine-arrow {
+            color: #667eea;
+            margin-left: auto;
+            font-size: 0.8em;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 0.95em;
+            padding: 6px 12px;
+            background: transparent;
+            color: #2d3748;
+        }
+
+        .search-input::placeholder {
+            color: #a0aec0;
+        }
+
+        .search-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        .search-button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+        }
+
+        /* 搜索引擎下拉菜单 */
+        .search-engines-dropdown {
+            position: absolute;
+            top: 60px;
+            left: 12px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            padding: 8px;
+            display: none;
+            z-index: 1000;
+            min-width: 180px;
+        }
+
+        .search-engines-dropdown.active {
+            display: block;
+            animation: slideDown 0.25s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-engine-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .search-engine-option:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            transform: translateX(5px);
+        }
+
+        .search-engine-option.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+        }
+
+        .search-engine-option-icon {
+            font-size: 1.3em;
+        }
+
+        .search-engine-option-name {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .settings-toggle {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3); }
+            50% { box-shadow: 0 8px 40px rgba(102, 126, 234, 0.5); }
+        }
+
+        .settings-toggle:hover {
+            transform: scale(1.15) rotate(90deg);
+            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.5);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .settings-toggle.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: rotate(180deg) scale(1.1);
+            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.6);
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -380px;
+            width: 380px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+            transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 100px 30px 30px 30px;
+        }
+
+        .settings-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .settings-panel::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+
+        .settings-panel::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        .settings-panel.active {
+            right: 0;
+        }
+
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .settings-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .settings-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+
+        .control-section {
+            margin-bottom: 35px;
+            animation: slideInRight 0.6s ease-out backwards;
+        }
+
+        .control-section:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .control-section:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .control-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 18px;
+            font-size: 19px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid transparent;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background-size: 100% 3px;
+            background-position: bottom;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        .control-section-title span:first-child {
+            font-size: 24px;
+            filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
+        }
+
+        .control-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .settings-panel .btn {
+            width: 100%;
+            text-align: left;
+            justify-content: flex-start;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .settings-panel .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: width 0.4s;
+        }
+
+        .settings-panel .btn:hover::before {
+            width: 100%;
+        }
+
+        .settings-panel .btn:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .settings-panel .btn span:first-child {
+            font-size: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .btn:active::after {
+            width: 250px;
+            height: 250px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            padding: 6px 12px;
+            font-size: 11px;
+            box-shadow: 0 3px 12px rgba(231, 76, 60, 0.25);
+        }
+
+        .btn-delete:hover {
+            box-shadow: 0 5px 18px rgba(231, 76, 60, 0.35);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            padding: 6px 12px;
+            font-size: 11px;
+            margin-right: 4px;
+            box-shadow: 0 3px 12px rgba(52, 152, 219, 0.25);
+        }
+
+        .btn-edit:hover {
+            box-shadow: 0 5px 18px rgba(52, 152, 219, 0.35);
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            box-shadow: 0 3px 12px rgba(149, 165, 166, 0.25);
+        }
+
+        .btn-cancel:hover {
+            box-shadow: 0 6px 20px rgba(149, 165, 166, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* 毛玻璃效果滑块样式 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(102, 126, 234, 0.6) 100%);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .groups {
+            display: grid;
+            gap: 18px;
+            animation: fadeIn 0.8s ease-out;
+            padding-bottom: 140px;
+        }
+
+        /* 链接视图样式（选中分组时使用） */
+        .links-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px 25px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            animation: fadeInDown 0.5s ease-out;
+        }
+
+        .links-view-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .links-view-icon {
+            font-size: 1.8em;
+        }
+
+        .links-view-title h2 {
+            font-size: 1.8em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+
+        .links-view-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .links-view-actions .btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 简化版添加按钮区域 */
+        .links-view-header-simple {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            animation: fadeIn 0.5s ease-out;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-add-link-simple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-add-link-simple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 18px rgba(102, 126, 234, 0.35);
+        }
+
+        .btn-add-link-simple:active {
+            transform: translateY(0);
+        }
+
+        .btn-recommend-simple {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            box-shadow: 0 3px 12px rgba(245, 158, 11, 0.3) !important;
+        }
+
+        .btn-recommend-simple:hover {
+            box-shadow: 0 5px 18px rgba(245, 158, 11, 0.45) !important;
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .group {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out backwards;
+        }
+
+        .group::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .group:hover::before {
+            transform: scaleX(1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .group:nth-child(1) { animation-delay: 0.05s; }
+        .group:nth-child(2) { animation-delay: 0.1s; }
+        .group:nth-child(3) { animation-delay: 0.15s; }
+        .group:nth-child(4) { animation-delay: 0.2s; }
+        .group:nth-child(5) { animation-delay: 0.25s; }
+
+        .group:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.15);
+            border-color: rgba(102, 126, 234, 0.25);
+        }
+
+        .group.dragging {
+            opacity: 0.6;
+            cursor: move;
+            transform: scale(0.98);
+        }
+
+        .group.drag-over {
+            border: 1.5px dashed #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1.5px solid rgba(102, 126, 234, 0.08);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .group-header:hover {
+            border-bottom-color: rgba(102, 126, 234, 0.2);
+        }
+
+        .group-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .drag-handle {
+            cursor: move;
+            color: #cbd5e0;
+            font-size: 1.3em;
+            padding: 5px;
+            transition: all 0.3s;
+        }
+
+        .drag-handle:hover {
+            color: #667eea;
+            transform: scale(1.2);
+        }
+
+        .collapse-icon {
+            font-size: 1.1em;
+            color: #667eea;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            user-select: none;
+            filter: drop-shadow(0 1px 3px rgba(102, 126, 234, 0.25));
+        }
+
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .group-title {
+            font-size: 1.35em;
+            color: #2d3748;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.3px;
+        }
+
+        .group-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s;
+            opacity: 1;
+        }
+
+        .group-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .links {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+        }
+
+        .link-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1.5px solid transparent;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            cursor: default;
+            overflow: hidden;
+        }
+
+        .link-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 12px;
+        }
+
+        .link-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .link-card:hover {
+            border-color: #667eea;
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 28px rgba(102, 126, 234, 0.2);
+        }
+
+        .link-card:hover::before {
+            opacity: 0.03;
+        }
+
+
+        .link-card a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+
+        .link-name {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #2d3748;
+            font-size: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: all 0.3s;
+        }
+
+        .link-card:hover .link-name {
+            transform: translateX(2px);
+        }
+
+        .link-url {
+            font-size: 11px;
+            color: #718096;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .link-stats {
+            display: flex;
+            gap: 6px;
+            margin-top: 7px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .click-count-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .last-visit-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: rgba(39, 174, 96, 0.08);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #27ae60;
+        }
+
+        /* 最近使用区域样式 - 固定在底部 */
+        /* 旧的浮动最近使用区域样式 - 已迁移到侧边栏 */
+        /*
+        .recent-section {
+            position: fixed;
+            bottom: 10px;
+            left: 220px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 99;
+            padding: 10px 15px;
+            animation: slideUpFromBottom 0.5s ease-out;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .recent-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+            pointer-events: none;
+            border-radius: 16px;
+        }
+
+        @keyframes slideUpFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .recent-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+            border-left: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .recent-header-icon {
+            font-size: 1em;
+        }
+
+        .recent-header-title {
+            font-size: 0.95em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .recent-links {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(102, 126, 234, 0.15) transparent;
+            position: relative;
+            z-index: 1;
+        }
+
+        .recent-links::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .recent-links::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 2px;
+        }
+
+        .recent-links::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 2px;
+        }
+
+        .recent-links::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        .recent-link-card {
+            position: relative;
+            min-width: 160px;
+            flex-shrink: 0;
+        }
+
+        .recent-link-card .link-card {
+            margin-bottom: 0;
+        }
+
+        .hot-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            box-shadow: 0 3px 10px rgba(255, 107, 107, 0.35);
+            z-index: 10;
+            animation: pulse-badge 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        */
+
+        /* 主内容区域不再需要底部边距 */
+        .groups {
+            padding-bottom: 20px;
+        }
+
+        .link-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(102, 126, 234, 0.08);
+            align-items: center;
+            position: relative;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 35px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 520px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            animation: slideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            color: #2d3748;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f7fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+        }
+
+        .btn-warning:hover {
+            background: #d68910;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .empty-group {
+            text-align: center;
+            color: #a0aec0;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 14px;
+            border: 2px dashed #cbd5e0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .empty-group::before {
+            content: '📭';
+            display: block;
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.6;
+        }
+
+        /* ====== Favicon 样式 ====== */
+        .favicon-preview-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            flex-wrap: wrap;
+        }
+
+        .favicon-preview-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));
+            border: 1.5px solid rgba(102,126,234,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .favicon-preview-box img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .favicon-preview-box.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(102,126,234,0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .favicon-preview-info {
+            font-size: 12px;
+            color: #718096;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .favicon-preview-info.success { color: #27ae60; font-weight: 600; }
+        .favicon-preview-info.error   { color: #e53e3e; }
+
+        .favicon-source-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .favicon-source-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            border: 1px solid rgba(102,126,234,0.3);
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .favicon-source-btn:hover,
+        .favicon-source-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* 链接卡片图标 */
+        .link-card-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            object-fit: contain;
+            flex-shrink: 0;
+            background: rgba(102,126,234,0.06);
+            border: 1px solid rgba(102,126,234,0.12);
+            padding: 2px;
+        }
+
+        .link-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .link-card-header .link-name {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .favicon-fetch-btn {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+            color: #667eea;
+            border: 1.5px solid rgba(102,126,234,0.3);
+            border-radius: 10px;
+            transition: all 0.25s;
+        }
+
+        .favicon-fetch-btn:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+
+        .btn-pack-html {
+            background: linear-gradient(135deg, rgba(39,174,96,0.12), rgba(22,160,133,0.12));
+            color: #27ae60;
+            border: 1.5px solid rgba(39,174,96,0.3);
+        }
+
+        .btn-pack-html:hover {
+            background: linear-gradient(135deg, #27ae60, #16a085) !important;
+            color: white !important;
+        }
+
+        .btn-favicon-all {
+            background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.12));
+            color: #667eea;
+            border: 1.5px solid rgba(102,126,234,0.3);
+        }
+
+        .btn-favicon-all:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2) !important;
+            color: white !important;
+        }
+
+        .btn-recommend {
+            background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.15));
+            color: #d97706;
+            border: 1.5px solid rgba(245,158,11,0.35);
+        }
+        .btn-recommend:hover {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            color: white !important;
+            border-color: transparent !important;
+        }
+
+        /* ===== 智能推荐弹窗 - 左右分栏 ===== */
+        #recommendModal {
+            align-items: stretch;
+            justify-content: center;
+        }
+
+        .rec-modal-shell {
+            display: flex;
+            width: 92vw;
+            max-width: 1100px;
+            height: 88vh;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+            animation: modalIn 0.28s cubic-bezier(.34,1.36,.64,1);
+        }
+
+        @keyframes modalIn {
+            from { opacity:0; transform: scale(0.94) translateY(12px); }
+            to   { opacity:1; transform: scale(1)    translateY(0); }
+        }
+
+        /* ---- 左侧面板 ---- */
+        .rec-left-panel {
+            width: 30%;
+            min-width: 320px;
+            max-width: 400px;
+            background: linear-gradient(180deg, #f8f7ff 0%, #f0eeff 100%);
+            border-right: 1px solid rgba(102,126,234,0.12);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 20px 16px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .rec-left-panel::-webkit-scrollbar { width: 4px; }
+        .rec-left-panel::-webkit-scrollbar-thumb { background: rgba(102,126,234,0.2); border-radius: 2px; }
+
+        /* 标题区 */
+        .rec-left-header {
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(102,126,234,0.12);
+        }
+
+        .rec-left-title {
+            font-size: 16px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 3px;
+        }
+
+        .rec-left-sub {
+            font-size: 11px;
+            color: #a0aec0;
+            line-height: 1.5;
+        }
+
+        /* 通用模块卡片 */
+        .rec-module {
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(102,126,234,0.12);
+            border-radius: 14px;
+            padding: 14px 12px 12px;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.05);
+        }
+
+        /* 模块内并排行（服务商 | 推荐方向） */
+        .rec-module-row {
+            display: flex;
+            gap: 0;
+            align-items: flex-start;
+        }
+
+        .rec-col {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .rec-col-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            margin-bottom: 7px;
+        }
+
+        /* 竖向分割线 */
+        .rec-col-divider {
+            width: 1px;
+            background: rgba(102,126,234,0.12);
+            margin: 0 10px;
+            align-self: stretch;
+            flex-shrink: 0;
+        }
+
+        /* 服务商列表 */
+        .rec-provider-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .rec-provider-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1.5px solid transparent;
+        }
+
+        .rec-provider-item:hover {
+            background: rgba(102,126,234,0.07);
+            border-color: rgba(102,126,234,0.18);
+        }
+
+        .rec-provider-item.active {
+            background: linear-gradient(135deg, rgba(102,126,234,0.13), rgba(118,75,162,0.1));
+            border-color: rgba(102,126,234,0.38);
+        }
+
+        .rec-pi-logo { font-size: 15px; line-height: 1; flex-shrink: 0; }
+
+        .rec-pi-text { display: flex; flex-direction: column; min-width: 0; }
+
+        .rec-pi-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #2d3748;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .rec-provider-item.active .rec-pi-name { color: #667eea; }
+
+        .rec-pi-sub { font-size: 10px; color: #b0b8c8; line-height: 1.2; }
+
+        /* 推荐方向列表 */
+        .rec-topic-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .rec-topic-item {
+            padding: 6px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            color: #4a5568;
+            transition: all 0.15s;
+            border: 1.5px solid transparent;
+            white-space: nowrap;
+        }
+
+        .rec-topic-item:hover {
+            background: rgba(102,126,234,0.07);
+            color: #667eea;
+        }
+
+        .rec-topic-item.active {
+            background: linear-gradient(135deg, rgba(102,126,234,0.13), rgba(118,75,162,0.1));
+            color: #667eea;
+            font-weight: 700;
+            border-color: rgba(102,126,234,0.3);
+        }
+
+        /* 自定义方向输入 */
+        .rec-topic-custom-wrap {
+            margin-top: 6px;
+            position: relative;
+        }
+        .rec-topic-custom-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px 28px 6px 8px;
+            font-size: 11px;
+            border: 1.5px solid rgba(102,126,234,0.2);
+            border-radius: 8px;
+            color: #2d3748;
+            background: rgba(255,255,255,0.85);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+        .rec-topic-custom-input::placeholder { color: #b0bcc8; }
+        .rec-topic-custom-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+        }
+        .rec-topic-custom-input.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102,126,234,0.06), rgba(118,75,162,0.04));
+        }
+        .rec-topic-custom-clear {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #b0bcc8;
+            font-size: 13px;
+            line-height: 1;
+            padding: 2px;
+            display: none;
+        }
+        .rec-topic-custom-clear:hover { color: #718096; }
+        .rec-topic-custom-wrap.has-value .rec-topic-custom-clear { display: block; }
+
+        /* 配置区 */
+        .rec-config-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .rec-field-row { display: flex; flex-direction: column; gap: 4px; }
+
+        .rec-field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        /* 操作按钮模块 */
+        .rec-module-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }
+
+        .rec-module-actions .recommend-generate-btn { flex: 1; justify-content: center; }
+        .rec-module-actions .btn-cancel { flex-shrink: 0; white-space: nowrap; }
+
+        /* ---- 右侧面板 ---- */
+        .rec-right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fafbff;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .recommend-results {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 20px 16px;
+        }
+
+        .recommend-results::-webkit-scrollbar { width: 5px; }
+        .recommend-results::-webkit-scrollbar-track { background: transparent; }
+        .recommend-results::-webkit-scrollbar-thumb { background: rgba(102,126,234,0.2); border-radius: 3px; }
+
+        .recommend-generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.3s;
+            box-shadow: 0 3px 12px rgba(102,126,234,0.3);
+        }
+
+        .recommend-generate-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 18px rgba(102,126,234,0.4);
+        }
+
+        .recommend-generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .recommend-loading {
+            padding: 20px 4px;
+            color: #718096;
+        }
+
+        /* 流式分析日志容器 */
+        .rec-stream-log {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            font-family: 'SFMono-Regular', 'Consolas', 'Menlo', monospace;
+        }
+        .rec-stream-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.08));
+            border-radius: 10px 10px 0 0;
+            border: 1px solid rgba(102,126,234,0.18);
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .rec-stream-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(102,126,234,0.25);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+        .rec-stream-header-text {
+            font-size: 12px;
+            font-weight: 700;
+            color: #5a67d8;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            letter-spacing: 0.3px;
+        }
+        .rec-stream-body {
+            background: rgba(15, 18, 32, 0.96);
+            border: 1px solid rgba(102,126,234,0.2);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            padding: 12px 14px;
+            min-height: 160px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        .rec-stream-body::-webkit-scrollbar { width: 4px; }
+        .rec-stream-body::-webkit-scrollbar-track { background: transparent; }
+        .rec-stream-body::-webkit-scrollbar-thumb { background: rgba(102,126,234,0.3); border-radius: 2px; }
+        .rec-stream-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 3px 0;
+            font-size: 11.5px;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .rec-stream-line.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .rec-stream-icon {
+            flex-shrink: 0;
+            width: 16px;
+            text-align: center;
+            font-size: 12px;
+            margin-top: 1px;
+        }
+        .rec-stream-text {
+            color: #a8b4d0;
+            font-family: 'SFMono-Regular', 'Consolas', 'Menlo', monospace;
+        }
+        .rec-stream-text .hl  { color: #79c0ff; }
+        .rec-stream-text .hl2 { color: #f0c674; }
+        .rec-stream-text .hl3 { color: #85e89d; }
+        .rec-stream-text .dim { color: #4a5568; }
+        .rec-stream-cursor {
+            display: inline-block;
+            width: 6px;
+            height: 12px;
+            background: #667eea;
+            vertical-align: middle;
+            margin-left: 2px;
+            animation: blink 0.9s step-end infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+        .recommend-section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 16px 0 8px;
+        }
+
+        .recommend-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(249,250,251,0.9));
+            border: 1.5px solid rgba(102,126,234,0.12);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .recommend-card:hover {
+            border-color: rgba(102,126,234,0.3);
+            box-shadow: 0 4px 16px rgba(102,126,234,0.12);
+            transform: translateY(-1px);
+        }
+
+        .recommend-card.added {
+            border-color: rgba(72,187,120,0.4);
+            background: linear-gradient(135deg, rgba(240,253,244,0.95), rgba(220,252,231,0.9));
+        }
+
+        .recommend-card-favicon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            object-fit: contain;
+            flex-shrink: 0;
+            background: rgba(102,126,234,0.08);
+            padding: 4px;
+        }
+
+        .recommend-card-favicon-fallback {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .recommend-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .recommend-card-name {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .recommend-card-url {
+            font-size: 11px;
+            color: #667eea;
+            margin-bottom: 5px;
+            text-decoration: none;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .recommend-card-desc {
+            font-size: 12px;
+            color: #718096;
+            line-height: 1.5;
+        }
+
+        .recommend-card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 6px;
+        }
+        .rec-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border-radius: 20px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: transform 0.15s, box-shadow 0.15s;
+            cursor: default;
+        }
+        .rec-tag:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(102,126,234,0.18); }
+        /* 已收藏标签 */
+        .rec-tag-added {
+            padding: 2px 8px;
+            font-size: 10px;
+            background: rgba(72,187,120,0.15);
+            color: #276749;
+            border: 1px solid rgba(72,187,120,0.25);
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        /* 权重百分比小徽标 */
+        .rec-tag-pct {
+            font-size: 9px;
+            font-weight: 700;
+            opacity: 0.65;
+            letter-spacing: 0.2px;
+        }
+
+        .recommend-card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .recommend-add-btn {
+            padding: 7px 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .recommend-add-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 3px 10px rgba(102,126,234,0.3);
+        }
+
+        .recommend-add-btn.added {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            cursor: default;
+        }
+
+        .recommend-open-btn {
+            padding: 6px 14px;
+            background: white;
+            color: #667eea;
+            border: 1.5px solid rgba(102,126,234,0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .recommend-open-btn:hover {
+            background: rgba(102,126,234,0.06);
+            border-color: #667eea;
+        }
+
+        /* 演示视频按钮 */
+        .rec-video-wrap {
+            position: static;
+            display: inline-block;
+        }
+        .rec-video-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(39,174,96,0.08) 0%, rgba(56,193,114,0.08) 100%);
+            color: #27ae60;
+            border: 1.5px solid rgba(39,174,96,0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .rec-video-btn:hover {
+            background: linear-gradient(135deg, rgba(39,174,96,0.15) 0%, rgba(56,193,114,0.15) 100%);
+            border-color: #27ae60;
+            transform: translateY(-1px);
+        }
+        .rec-video-btn .rec-vbtn-icon { font-size: 13px; }
+
+        /* 视频平台弹出层 */
+        .rec-video-popover {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: auto;
+            background: white;
+            border: 1px solid rgba(102,126,234,0.18);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            padding: 4px;
+            z-index: 999;
+            animation: popoverIn 0.15s ease-out;
+        }
+        @keyframes popoverIn {
+            from { opacity:0; transform: translateY(4px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+        .rec-video-popover.open { display: block; }
+        .rec-vpop-title {
+            font-size: 9px;
+            font-weight: 700;
+            color: #a0aec0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 2px 6px 4px;
+        }
+        .rec-vpop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+        }
+        .rec-video-platform {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 6px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #2d3748;
+            font-size: 10.5px;
+            font-weight: 600;
+            transition: background 0.15s;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .rec-video-platform:hover {
+            background: var(--plat-bg, rgba(102,126,234,0.07));
+            border-color: var(--plat-border, rgba(102,126,234,0.15));
+        }
+        .rec-video-platform-icon { font-size: 13px; flex-shrink: 0; }
+        .rec-video-platform-sub { font-size: 8.5px; color: #a0aec0; font-weight: 400; display: block; margin-top: 0; line-height: 1.2; }
+
+        .recommend-group-select {
+            font-size: 11px;
+            border: 1px solid rgba(102,126,234,0.25);
+            border-radius: 6px;
+            padding: 4px 6px;
+            color: #4a5568;
+            background: white;
+            cursor: pointer;
+            max-width: 100px;
+        }
+
+        .recommend-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0aec0;
+        }
+
+        .recommend-empty-icon { font-size: 42px; margin-bottom: 10px; }
+        .recommend-empty-text { font-size: 14px; }
+
+        .recommend-error {
+            background: rgba(254,215,215,0.6);
+            border: 1px solid rgba(252,129,129,0.4);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: #c53030;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+
+        .rec-provider-hint {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .rec-provider-hint a { color: #667eea; }
+
+        /* 可折叠服务商区域 */
+        .rec-col-label-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            padding: 4px 0;
+            border-radius: 6px;
+            transition: color 0.2s;
+        }
+        .rec-col-label-toggle:hover { color: #667eea; }
+        .rec-col-label-toggle .toggle-arrow {
+            font-size: 11px;
+            color: #a0aec0;
+            transition: transform 0.25s ease, color 0.2s;
+            display: inline-block;
+        }
+        .rec-col-label-toggle.collapsed .toggle-arrow {
+            transform: rotate(-90deg);
+        }
+        .rec-provider-collapsible {
+            overflow: hidden;
+            max-height: 400px;
+            transition: max-height 0.3s ease, opacity 0.25s ease;
+            opacity: 1;
+        }
+        .rec-provider-collapsible.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+        /* 折叠时显示已选服务商摘要 */
+        .rec-provider-summary {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 8px;
+            background: rgba(102,126,234,0.08);
+            border-radius: 8px;
+            border: 1px solid rgba(102,126,234,0.2);
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+        .rec-provider-summary:hover { background: rgba(102,126,234,0.14); }
+        .rec-col-label-toggle.collapsed ~ .rec-provider-summary { display: flex; }
+
+        .recommend-api-key-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            background: rgba(255,251,235,0.8);
+            border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 10px;
+        }
+
+        .recommend-api-key-input {
+            flex: 1;
+            border: 1.5px solid rgba(102,126,234,0.25);
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 13px;
+            color: #2d3748;
+            outline: none;
+        }
+
+        .recommend-api-key-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+        }
+
+        .recommend-hint {
+            font-size: 11px;
+            color: #d97706;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景元素 -->
+    <video id="videoBackground" loop muted autoplay playsinline></video>
+    <img id="imageBackground" alt="背景图片">
+    <div class="background-overlay"></div>
+
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-resizer" id="sidebarResizer"></div>
+        
+        <div class="sidebar-header">
+            <div class="sidebar-title">📁 分组</div>
+            <button class="sidebar-add-btn" onclick="openAddGroupModal()" title="添加分组">+</button>
+        </div>
+        
+        <div class="sidebar-groups" id="sidebarGroups"></div>
+        
+        <!-- 最近使用区域 -->
+        <div class="sidebar-recent-section">
+            <div class="sidebar-recent-header">
+                <span class="sidebar-recent-header-icon">⭐</span>
+                <span class="sidebar-recent-header-title">最近使用</span>
+            </div>
+            <div class="sidebar-recent-links" id="sidebarRecentLinks"></div>
+        </div>
+    </div>
+
+    <!-- 设置按钮 -->
+    <button class="settings-toggle" onclick="toggleSettings()" id="settingsToggle">⚙️</button>
+
+    <!-- 设置遮罩层 -->
+    <div class="settings-overlay" onclick="toggleSettings()" id="settingsOverlay"></div>
+
+    <!-- 设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <!-- 内容管理 -->
+        <div class="control-section">
+            <div class="control-section-title">
+                <span>📋</span>
+                <span>内容管理</span>
+            </div>
+            <div class="control-buttons">
+                <button class="btn" onclick="openAddGroupModal()">
+                    <span>➕</span>
+                    <span>添加分组</span>
+                </button>
+                <button class="btn" onclick="openAddLinkModal()">
+                    <span>🔗</span>
+                    <span>添加网址</span>
+                </button>
+                <button class="btn" onclick="exportData()">
+                    <span>💾</span>
+                    <span>导出数据</span>
+                </button>
+                <button class="btn" onclick="importData()">
+                    <span>📥</span>
+                    <span>导入数据</span>
+                </button>
+                <button class="btn btn-favicon-all" onclick="batchFetchAllFavicons()">
+                    <span>🖼️</span>
+                    <span>批量获取图标</span>
+                </button>
+                <button class="btn btn-pack-html" onclick="packAndDownloadHTML()">
+                    <span>📦</span>
+                    <span>封装为HTML</span>
+                </button>
+                <button class="btn btn-recommend" onclick="openRecommendModal()">
+                    <span>✨</span>
+                    <span>智能推荐网址</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 背景设置 -->
+        <div class="control-section">
+            <div class="control-section-title">
+                <span>🎨</span>
+                <span>背景设置</span>
+            </div>
+            <div class="control-buttons">
+                <button class="btn btn-success" onclick="selectImageBackground()">
+                    <span>🖼️</span>
+                    <span>图片背景</span>
+                </button>
+                <button class="btn btn-success" onclick="selectVideoBackground()">
+                    <span>🎬</span>
+                    <span>视频背景</span>
+                </button>
+                <button class="btn btn-warning" onclick="removeBackground()">
+                    <span>🔄</span>
+                    <span>恢复默认</span>
+                </button>
+            </div>
+            <!-- 毛玻璃效果控制 -->
+            <div class="control-section">
+                <div class="control-section-title">
+                    <span>❄️</span>
+                    <span>毛玻璃效果</span>
+                </div>
+                <div style="padding: 0 4px;">
+                    <!-- 背景模糊 -->
+                    <div style="margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-size: 0.85em; color: #718096;">🖼️ 背景模糊</span>
+                            <span id="bgBlurValue" style="font-weight: 600; color: #667eea; font-size: 0.9em;">关闭</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            id="bgBlurSlider" 
+                            min="0" 
+                            max="25" 
+                            value="0" 
+                            style="width: 100%; cursor: pointer;"
+                            oninput="updateBgBlur(this.value)"
+                        />
+                        <div style="display: flex; justify-content: space-between; margin-top: 3px; font-size: 0.75em; color: #a0aec0;">
+                            <span>无</span><span>最强</span>
+                        </div>
+                    </div>
+                    <!-- 侧边栏模糊 -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-size: 0.85em; color: #718096;">📋 侧边栏模糊</span>
+                            <span id="sidebarBlurValue" style="font-weight: 600; color: #667eea; font-size: 0.9em;">关闭</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            id="sidebarBlurSlider" 
+                            min="0" 
+                            max="25" 
+                            value="0" 
+                            style="width: 100%; cursor: pointer;"
+                            oninput="updateSidebarBlur(this.value)"
+                        />
+                        <div style="display: flex; justify-content: space-between; margin-top: 3px; font-size: 0.75em; color: #a0aec0;">
+                            <span>无</span><span>最强</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1 id="siteTitle" onclick="makeEditable('siteTitle')" title="点击编辑标题">🤖 AI 网址导航</h1>
+            <p id="siteSubtitle" onclick="makeEditable('siteSubtitle')" title="点击编辑副标题">你的个人AI工具收藏夹</p>
+        </header>
+
+        <!-- 搜索框 -->
+        <div class="search-container">
+            <div class="search-wrapper">
+                <div class="search-engine-selector" onclick="toggleSearchEngines()">
+                    <span class="search-engine-icon" id="currentEngineIcon">🔍</span>
+                    <span class="search-engine-name" id="currentEngineName">Google</span>
+                    <span class="search-engine-arrow">▼</span>
+                </div>
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="输入关键词搜索..." 
+                    onkeypress="handleSearchKeypress(event)"
+                />
+                <button class="search-button" onclick="performSearch()">搜索</button>
+            </div>
+            
+            <!-- 搜索引擎下拉菜单 -->
+            <div class="search-engines-dropdown" id="searchEnginesDropdown">
+                <div class="search-engine-option active" onclick="selectSearchEngine('google', '🔍', 'Google', 'https://www.google.com/search?q=')">
+                    <span class="search-engine-option-icon">🔍</span>
+                    <span class="search-engine-option-name">Google</span>
+                </div>
+                <div class="search-engine-option" onclick="selectSearchEngine('bing', '🅱️', 'Bing', 'https://www.bing.com/search?q=')">
+                    <span class="search-engine-option-icon">🅱️</span>
+                    <span class="search-engine-option-name">Bing</span>
+                </div>
+                <div class="search-engine-option" onclick="selectSearchEngine('baidu', '🅱', '百度', 'https://www.baidu.com/s?wd=')">
+                    <span class="search-engine-option-icon">🅱</span>
+                    <span class="search-engine-option-name">百度</span>
+                </div>
+                <div class="search-engine-option" onclick="selectSearchEngine('duckduckgo', '🦆', 'DuckDuckGo', 'https://duckduckgo.com/?q=')">
+                    <span class="search-engine-option-icon">🦆</span>
+                    <span class="search-engine-option-name">DuckDuckGo</span>
+                </div>
+                <div class="search-engine-option" onclick="selectSearchEngine('yahoo', '🟣', 'Yahoo', 'https://search.yahoo.com/search?p=')">
+                    <span class="search-engine-option-icon">🟣</span>
+                    <span class="search-engine-option-name">Yahoo</span>
+                </div>
+                <div class="search-engine-option" onclick="selectSearchEngine('yandex', '🔴', 'Yandex', 'https://yandex.com/search/?text=')">
+                    <span class="search-engine-option-icon">🔴</span>
+                    <span class="search-engine-option-name">Yandex</span>
+                </div>
+                <div class="search-engine-option" onclick="selectSearchEngine('sogou', '🦊', '搜狗', 'https://www.sogou.com/web?query=')">
+                    <span class="search-engine-option-icon">🦊</span>
+                    <span class="search-engine-option-name">搜狗</span>
+                </div>
+                <div class="search-engine-option" onclick="selectSearchEngine('360', '🔵', '360搜索', 'https://www.so.com/s?q=')">
+                    <span class="search-engine-option-icon">🔵</span>
+                    <span class="search-engine-option-name">360搜索</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="groups" id="groupsContainer"></div>
+    </div>
+
+    <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+    <input type="file" id="videoInput" accept="video/*" onchange="handleVideoUpload(event)">
+
+    <!-- 添加分组模态框 -->
+    <div class="modal" id="addGroupModal">
+        <div class="modal-content">
+            <h2 class="modal-title">添加分组</h2>
+            <div class="form-group">
+                <label>分组名称</label>
+                <input type="text" id="groupName" placeholder="例如：聊天机器人">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-cancel" onclick="closeModal('addGroupModal')">取消</button>
+                <button class="btn" onclick="addGroup()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑网址模态框 -->
+    <div class="modal" id="addLinkModal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="linkModalTitle">添加网址</h2>
+            <div class="form-group">
+                <label>网站名称</label>
+                <input type="text" id="linkName" placeholder="例如：ChatGPT">
+            </div>
+            <div class="form-group">
+                <label>网址</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="url" id="linkUrl" placeholder="https://example.com" style="flex:1;" oninput="onUrlInput()" onblur="autoFetchFavicon()">
+                    <button type="button" class="btn favicon-fetch-btn" id="faviconFetchBtn" onclick="autoFetchFavicon(true)" title="获取官方图标" style="white-space:nowrap;padding:10px 14px;font-size:13px;">🖼️ 获取图标</button>
+                </div>
+            </div>
+            <!-- 图标预览区 -->
+            <div class="form-group favicon-preview-group" id="faviconPreviewGroup" style="display:none;">
+                <label>网站图标</label>
+                <div class="favicon-preview-wrapper">
+                    <div class="favicon-preview-box" id="faviconPreviewBox">
+                        <img id="faviconPreviewImg" src="" alt="" onerror="onFaviconError(this)">
+                    </div>
+                    <div class="favicon-preview-info" id="faviconPreviewInfo">正在获取图标...</div>
+                    <div class="favicon-source-btns" id="faviconSourceBtns"></div>
+                </div>
+                <input type="hidden" id="linkFavicon">
+            </div>
+            <div class="form-group">
+                <label>所属分组</label>
+                <select id="linkGroup"></select>
+            </div>
+            <div class="form-group">
+                <label>🗓️ 上线时间 <span style="font-size:11px;color:#a0aec0;font-weight:400;">（可选）</span></label>
+                <input type="month" id="linkLaunchDate" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;color:#2d3748;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#e2e8f0'">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-cancel" onclick="closeModal('addLinkModal')">取消</button>
+                <button class="btn" onclick="saveLink()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑分组模态框 -->
+    <div class="modal" id="editGroupModal">
+        <div class="modal-content">
+            <h2 class="modal-title">编辑分组</h2>
+            <div class="form-group">
+                <label>分组名称</label>
+                <input type="text" id="editGroupName">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-cancel" onclick="closeModal('editGroupModal')">取消</button>
+                <button class="btn" onclick="updateGroup()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智能推荐网址弹窗 -->
+    <div class="modal" id="recommendModal">
+        <div class="rec-modal-shell">
+
+            <!-- 左侧配置面板 -->
+            <div class="rec-left-panel">
+
+                <!-- 顶部标题 -->
+                <div class="rec-left-header">
+                    <div class="rec-left-title">✨ 智能推荐</div>
+                    <div class="rec-left-sub">AI 分析你的收藏，推荐优质工具</div>
+                </div>
+
+                <!-- ① 模块一：服务商 + 推荐方向 并排 -->
+                <div class="rec-module">
+                    <div class="rec-module-row">
+
+                        <!-- 服务商列 -->
+                        <div class="rec-col">
+                            <div class="rec-col-label rec-col-label-toggle" id="providerToggle" onclick="toggleProviderSection()">
+                                <span>AI 服务商</span>
+                                <span class="toggle-arrow">▼</span>
+                            </div>
+                            <div class="rec-provider-summary" id="providerSummary" onclick="toggleProviderSection()">
+                                <span id="providerSummaryIcon">🤖</span>
+                                <span id="providerSummaryName">Claude</span>
+                                <span style="color:#a0aec0;font-weight:400;">· 点击展开</span>
+                            </div>
+                            <div class="rec-provider-collapsible" id="providerCollapsible">
+                            <div class="rec-provider-list" id="recProviderGrid">
+                                <div class="rec-provider-item active" onclick="selectProvider(this,'claude')" data-id="claude">
+                                    <span class="rec-pi-logo">🤖</span>
+                                    <div class="rec-pi-text">
+                                        <span class="rec-pi-name">Claude</span>
+                                        <span class="rec-pi-sub">Anthropic</span>
+                                    </div>
+                                </div>
+                                <div class="rec-provider-item" onclick="selectProvider(this,'openai')" data-id="openai">
+                                    <span class="rec-pi-logo">🟢</span>
+                                    <div class="rec-pi-text">
+                                        <span class="rec-pi-name">ChatGPT</span>
+                                        <span class="rec-pi-sub">OpenAI</span>
+                                    </div>
+                                </div>
+                                <div class="rec-provider-item" onclick="selectProvider(this,'gemini')" data-id="gemini">
+                                    <span class="rec-pi-logo">💎</span>
+                                    <div class="rec-pi-text">
+                                        <span class="rec-pi-name">Gemini</span>
+                                        <span class="rec-pi-sub">Google</span>
+                                    </div>
+                                </div>
+                                <div class="rec-provider-item" onclick="selectProvider(this,'deepseek')" data-id="deepseek">
+                                    <span class="rec-pi-logo">🔵</span>
+                                    <div class="rec-pi-text">
+                                        <span class="rec-pi-name">DeepSeek</span>
+                                        <span class="rec-pi-sub">深度求索</span>
+                                    </div>
+                                </div>
+                                <div class="rec-provider-item" onclick="selectProvider(this,'qwen')" data-id="qwen">
+                                    <span class="rec-pi-logo">☁️</span>
+                                    <div class="rec-pi-text">
+                                        <span class="rec-pi-name">通义千问</span>
+                                        <span class="rec-pi-sub">阿里云</span>
+                                    </div>
+                                </div>
+                                <div class="rec-provider-item" onclick="selectProvider(this,'zhipu')" data-id="zhipu">
+                                    <span class="rec-pi-logo">🔷</span>
+                                    <div class="rec-pi-text">
+                                        <span class="rec-pi-name">智谱 GLM</span>
+                                        <span class="rec-pi-sub">智谱AI</span>
+                                    </div>
+                                </div>
+                                <div class="rec-provider-item" onclick="selectProvider(this,'moonshot')" data-id="moonshot">
+                                    <span class="rec-pi-logo">🌙</span>
+                                    <div class="rec-pi-text">
+                                        <span class="rec-pi-name">Kimi</span>
+                                        <span class="rec-pi-sub">月之暗面</span>
+                                    </div>
+                                </div>
+                                <div class="rec-provider-item" onclick="selectProvider(this,'custom')" data-id="custom">
+                                    <span class="rec-pi-logo">⚙️</span>
+                                    <div class="rec-pi-text">
+                                        <span class="rec-pi-name">自定义</span>
+                                        <span class="rec-pi-sub">OpenAI 兼容</span>
+                                    </div>
+                                </div>
+                            </div>
+                            </div><!-- /rec-provider-collapsible -->
+                        </div>
+
+                        <!-- 分隔线 -->
+                        <div class="rec-col-divider"></div>
+
+                        <!-- 推荐方向列 -->
+                        <div class="rec-col">
+                            <div class="rec-col-label">推荐方向</div>
+                            <div class="rec-topic-list">
+                                <div class="rec-topic-item active" onclick="selectRecommendTopic(this,'auto')">🤖 自动推断</div>
+                                <div class="rec-topic-item" onclick="selectRecommendTopic(this,'chat')">💬 聊天 AI</div>
+                                <div class="rec-topic-item" onclick="selectRecommendTopic(this,'image')">🎨 AI 绘图</div>
+                                <div class="rec-topic-item" onclick="selectRecommendTopic(this,'code')">💻 AI 编程</div>
+                                <div class="rec-topic-item" onclick="selectRecommendTopic(this,'productivity')">📈 AI 效率</div>
+                                <div class="rec-topic-item" onclick="selectRecommendTopic(this,'search')">🔍 AI 搜索</div>
+                                <div class="rec-topic-item" onclick="selectRecommendTopic(this,'video')">🎬 AI 视频</div>
+                            </div>
+                            <div class="rec-topic-custom-wrap" id="recCustomTopicWrap">
+                                <input
+                                    class="rec-topic-custom-input"
+                                    id="recCustomTopicInput"
+                                    type="text"
+                                    placeholder="✏️ 手动输入方向，如：AI音乐创作"
+                                    oninput="onCustomTopicInput()"
+                                />
+                                <button class="rec-topic-custom-clear" id="recCustomTopicClear" onclick="clearCustomTopic()" title="清除">✕</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ② 模块二：API 配置 -->
+                <div class="rec-module">
+                    <div class="rec-col-label" style="margin-bottom:10px;">🔧 API 配置</div>
+                    <div class="rec-config-inner">
+                        <div class="rec-field-row">
+                            <label class="rec-field-label" id="recKeyLabel">🔑 API Key</label>
+                            <input class="recommend-api-key-input" id="recommendApiKey" type="password" placeholder="请输入 API Key">
+                        </div>
+                        <div class="rec-field-row">
+                            <label class="rec-field-label">🧠 模型</label>
+                            <select class="recommend-group-select" id="recModelSelect" style="width:100%;font-size:12px;padding:7px 8px;"></select>
+                        </div>
+                        <div id="recCustomEndpointRow" style="display:none;" class="rec-field-row">
+                            <label class="rec-field-label">🌐 API 端点</label>
+                            <input class="recommend-api-key-input" id="recCustomEndpoint" type="text" placeholder="https://your-endpoint.com/v1">
+                        </div>
+                        <div id="recProviderHint" class="rec-provider-hint"></div>
+                    </div>
+                </div>
+
+                <!-- ③ 模块三：操作按钮 -->
+                <div class="rec-module rec-module-actions">
+                    <button class="recommend-generate-btn" id="recommendGenBtn" onclick="generateRecommendations()">
+                        <span id="recommendGenBtnIcon">🚀</span>
+                        <span id="recommendGenBtnText">开始推荐</span>
+                    </button>
+                    <button class="btn btn-cancel" onclick="closeModal('recommendModal')">关闭</button>
+                </div>
+
+            </div>
+
+            <!-- 右侧结果面板 -->
+            <div class="rec-right-panel">
+                <div class="recommend-results" id="recommendResults">
+                    <div class="recommend-empty">
+                        <div class="recommend-empty-icon">🌟</div>
+                        <div class="recommend-empty-text">在左侧配置好 API Key，选择推荐方向后点击「开始推荐」</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 批量获取图标进度弹窗 -->
+    <div class="modal" id="batchFaviconModal">
+        <div class="modal-content" style="max-width:480px;">
+            <h2 class="modal-title">🖼️ 批量获取图标</h2>
+            <div id="batchFaviconStatus" style="margin-bottom:16px;font-size:14px;color:#4a5568;"></div>
+            <!-- 进度条 -->
+            <div style="background:#e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:16px;height:10px;">
+                <div id="batchFaviconBar" style="height:100%;width:0%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:8px;transition:width 0.3s;"></div>
+            </div>
+            <!-- 滚动日志 -->
+            <div id="batchFaviconLog" style="max-height:240px;overflow-y:auto;background:#f7fafc;border-radius:10px;padding:10px 12px;font-size:12px;color:#4a5568;line-height:1.8;border:1px solid #e2e8f0;"></div>
+            <div class="form-actions" style="margin-top:20px;">
+                <button class="btn btn-cancel" id="batchFaviconCloseBtn" onclick="closeModal('batchFaviconModal')" disabled>关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据结构
+        let data = {
+            groups: [],
+            links: [],
+            background: {
+                type: 'gradient', // 'gradient', 'image', 'video'
+                data: null // base64 data or video URL
+            },
+            collapsedGroups: [], // 存储折叠的分组ID
+            linkStats: {}, // 存储每个链接的统计信息 { linkId: { clickCount: 0, lastVisit: timestamp } }
+            bgBlur: 0,      // 背景模糊强度 (0-25，0=关闭)
+            sidebarBlur: 0, // 侧边栏模糊强度 (0-25，0=关闭)
+            siteTitle: '🤖 AI 网址导航',
+            siteSubtitle: '你的个人AI工具收藏夹',
+            sortConfig: { // 排序配置
+                type: 'name', // 'name', 'clicks', 'recent'
+                order: 'asc' // 'asc' 或 'desc'
+            }
+        };
+
+        let editingLinkId = null;
+        let editingGroupId = null;
+        let draggedElement = null;
+        let draggedType = null; // 'group' or 'link'
+        let draggedId = null;
+
+        // 搜索引擎相关
+        let currentSearchEngine = {
+            id: 'google',
+            icon: '🔍',
+            name: 'Google',
+            url: 'https://www.google.com/search?q='
+        };
+
+        // 当前选中的分组ID（null表示显示全部）
+        let currentGroupId = null;
+
+        // 初始化
+        function init() {
+            loadData();
+            renderSidebar();
+            renderGroups();
+            applyBackground();
+            loadTitles();
+            loadSearchEngine();
+            renderRecentLinks();
+            initSidebarResizer();
+            initBlurEffect();
+        }
+
+        // 加载搜索引擎设置
+        function loadSearchEngine() {
+            const savedEngine = localStorage.getItem('searchEngine');
+            if (savedEngine) {
+                currentSearchEngine = JSON.parse(savedEngine);
+                document.getElementById('currentEngineIcon').textContent = currentSearchEngine.icon;
+                document.getElementById('currentEngineName').textContent = currentSearchEngine.name;
+            }
+        }
+
+        // 保存搜索引擎设置
+        function saveSearchEngine() {
+            localStorage.setItem('searchEngine', JSON.stringify(currentSearchEngine));
+        }
+
+        // 切换搜索引擎下拉菜单
+        function toggleSearchEngines() {
+            const dropdown = document.getElementById('searchEnginesDropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        // 选择搜索引擎
+        function selectSearchEngine(id, icon, name, url) {
+            currentSearchEngine = { id, icon, name, url };
+            document.getElementById('currentEngineIcon').textContent = icon;
+            document.getElementById('currentEngineName').textContent = name;
+            
+            // 更新选中状态
+            document.querySelectorAll('.search-engine-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            saveSearchEngine();
+            toggleSearchEngines();
+        }
+
+        // 执行搜索
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query) {
+                const searchUrl = currentSearchEngine.url + encodeURIComponent(query);
+                window.open(searchUrl, '_blank');
+            }
+        }
+
+        // 处理回车键搜索
+        function handleSearchKeypress(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
+        }
+
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('searchEnginesDropdown');
+            const selector = document.querySelector('.search-engine-selector');
+            if (dropdown && selector && !dropdown.contains(event.target) && !selector.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        // 加载标题
+        function loadTitles() {
+            document.getElementById('siteTitle').textContent = data.siteTitle || '🤖 AI 网址导航';
+            document.getElementById('siteSubtitle').textContent = data.siteSubtitle || '你的个人AI工具收藏夹';
+        }
+
+        // 加载数据
+        function loadData() {
+            const savedData = localStorage.getItem('aiNavigator');
+            if (savedData) {
+                data = JSON.parse(savedData);
+                // 确保背景配置存在
+                if (!data.background) {
+                    data.background = {
+                        type: 'gradient',
+                        data: null
+                    };
+                }
+                // 确保折叠状态存在
+                if (!data.collapsedGroups) {
+                    data.collapsedGroups = [];
+                }
+                // 确保链接统计存在
+                if (!data.linkStats) {
+                    data.linkStats = {};
+                }
+                // 确保标题存在
+                if (!data.siteTitle) {
+                    data.siteTitle = '🤖 AI 网址导航';
+                }
+                if (!data.siteSubtitle) {
+                    data.siteSubtitle = '你的个人AI工具收藏夹';
+                }
+                // 确保毛玻璃强度存在（兼容旧数据）
+                if (data.bgBlur === undefined) {
+                    data.bgBlur = data.blurIntensity || 0;
+                }
+                if (data.sidebarBlur === undefined) {
+                    data.sidebarBlur = data.blurIntensity || 0;
+                }
+                // 确保排序配置存在
+                if (!data.sortConfig) {
+                    data.sortConfig = { type: 'name', order: 'asc' };
+                }
+            } else {
+                // 从备份数据初始化
+                data = {"groups": [{"id": 1, "name": "AGI", "order": 0}, {"id": 2, "name": "AIGC", "order": 1}, {"id": 3, "name": "GIT", "order": 2}], "links": [], "background": {}, "collapsedGroups": [2, 3, 1], "siteTitle": "ikiru", "siteSubtitle": "ありね", "linkStats": {}, "blurIntensity": 0, "sortConfig": {"type": "clicks", "order": "desc"}};
+                saveData();
+            }
+        }
+
+        // 保存数据
+        function saveData() {
+            localStorage.setItem('aiNavigator', JSON.stringify(data));
+        }
+
+        // 渲染分组
+        function renderGroups() {
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = '';
+
+            // 如果选中了特定分组，直接显示该分组的链接
+            if (currentGroupId !== null) {
+                const selectedGroup = data.groups.find(g => g.id === currentGroupId);
+                if (selectedGroup) {
+                    renderGroupLinks(selectedGroup, container);
+                }
+                return;
+            }
+
+            // 在显示所有分组前，添加全局排序控制头部
+            const globalHeaderDiv = document.createElement('div');
+            globalHeaderDiv.className = 'links-view-header-simple';
+            globalHeaderDiv.style.marginBottom = '20px';
+            globalHeaderDiv.innerHTML = `
+                <div class="sort-controls">
+                    <div class="sort-label">
+                        <span>📊</span>
+                        <span>排序:</span>
+                    </div>
+                    <div class="sort-buttons">
+                        <button class="sort-btn ${data.sortConfig.type === 'name' ? 'active' : ''}" data-sort="name" onclick="changeSortType('name')">
+                            🔤 名称
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'clicks' ? 'active' : ''}" data-sort="clicks" onclick="changeSortType('clicks')">
+                            🔥 访问
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'recent' ? 'active' : ''}" data-sort="recent" onclick="changeSortType('recent')">
+                            ⏰ 时间
+                        </button>
+                    </div>
+                    <button class="sort-order-btn ${data.sortConfig.order === 'asc' ? 'active' : ''}" onclick="toggleSortOrder()" title="切换排序方向">
+                        <span>${data.sortConfig.order === 'asc' ? '⬆️' : '⬇️'}</span>
+                    </button>
+                </div>
+                <button class="btn-add-link-simple btn-recommend-simple" onclick="openRecommendModal()">
+                    ✨ 智能推荐
+                </button>
+                <button class="btn-add-link-simple" onclick="openAddLinkModal()">
+                    ➕ 添加网址
+                </button>
+            `;
+            container.appendChild(globalHeaderDiv);
+
+            // 显示所有分组（默认状态）
+            const sortedGroups = [...data.groups].sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 999;
+                const orderB = b.order !== undefined ? b.order : 999;
+                return orderA - orderB;
+            });
+
+            sortedGroups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group';
+                groupDiv.draggable = true;
+                groupDiv.dataset.groupId = group.id;
+                
+                const groupLinks = sortLinks(data.links.filter(link => link.groupId === group.id));
+                
+                const isCollapsed = data.collapsedGroups.includes(group.id);
+                
+                groupDiv.innerHTML = `
+                    <div class="group-header" onclick="toggleGroup(${group.id})">
+                        <div class="group-title-wrapper">
+                            <span class="drag-handle" draggable="true" onclick="event.stopPropagation()">⋮⋮</span>
+                            <span class="collapse-icon ${isCollapsed ? 'collapsed' : ''}">▼</span>
+                            <div class="group-title">${group.name}</div>
+                        </div>
+                        <div class="group-actions" onclick="event.stopPropagation()">
+                            <button class="btn btn-edit" onclick="openEditGroupModal(${group.id})">编辑</button>
+                            <button class="btn btn-delete" onclick="deleteGroup(${group.id})">删除分组</button>
+                        </div>
+                    </div>
+                    <div class="group-content ${isCollapsed ? 'collapsed' : ''}" id="content-${group.id}">
+                        <div class="links" id="links-${group.id}">
+                            ${groupLinks.length === 0 ? '<div class="empty-group">暂无网址，点击上方"添加网址"按钮添加</div>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(groupDiv);
+                
+                // 添加分组拖拽事件
+                setupGroupDragEvents(groupDiv);
+                
+                // 渲染链接
+                groupLinks.forEach(link => {
+                    renderLink(link, group.id);
+                });
+            });
+
+            updateGroupSelect();
+        }
+
+        // 渲染分组的所有链接（无分组容器）
+        function renderGroupLinks(group, container) {
+            const groupLinks = sortLinks(data.links.filter(link => link.groupId === group.id));
+
+            // 创建简化的添加按钮区域，并集成排序控制
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'links-view-header-simple';
+            headerDiv.innerHTML = `
+                <div class="sort-controls">
+                    <div class="sort-label">
+                        <span>📊</span>
+                        <span>排序:</span>
+                    </div>
+                    <div class="sort-buttons">
+                        <button class="sort-btn ${data.sortConfig.type === 'name' ? 'active' : ''}" data-sort="name" onclick="changeSortType('name')">
+                            🔤 名称
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'clicks' ? 'active' : ''}" data-sort="clicks" onclick="changeSortType('clicks')">
+                            🔥 访问
+                        </button>
+                        <button class="sort-btn ${data.sortConfig.type === 'recent' ? 'active' : ''}" data-sort="recent" onclick="changeSortType('recent')">
+                            ⏰ 时间
+                        </button>
+                    </div>
+                    <button class="sort-order-btn ${data.sortConfig.order === 'asc' ? 'active' : ''}" onclick="toggleSortOrder()" title="切换排序方向">
+                        <span>${data.sortConfig.order === 'asc' ? '⬆️' : '⬇️'}</span>
+                    </button>
+                </div>
+                <button class="btn-add-link-simple btn-recommend-simple" onclick="openRecommendModal()">
+                    ✨ 智能推荐
+                </button>
+                <button class="btn-add-link-simple" onclick="openAddLinkModal()">
+                    ➕ 添加网址
+                </button>
+            `;
+            container.appendChild(headerDiv);
+
+            // 创建链接网格容器
+            const linksGrid = document.createElement('div');
+            linksGrid.className = 'links-grid';
+            linksGrid.id = `links-grid-${group.id}`;
+
+            if (groupLinks.length === 0) {
+                linksGrid.innerHTML = '<div class="empty-group">暂无网址，点击"添加网址"按钮添加</div>';
+            } else {
+                groupLinks.forEach(link => {
+                    const linkCard = createLinkCard(link);
+                    linksGrid.appendChild(linkCard);
+                });
+            }
+
+            container.appendChild(linksGrid);
+        }
+
+        // 创建链接卡片
+        function createLinkCard(link) {
+            const linkCard = document.createElement('div');
+            linkCard.className = 'link-card';
+            linkCard.dataset.linkId = link.id;
+
+            // 获取统计信息
+            const stats = data.linkStats[link.id] || { clickCount: 0, lastVisit: null };
+            const lastVisitText = stats.lastVisit ? formatTimeAgo(stats.lastVisit) : '从未访问';
+
+            const faviconHtml = link.favicon
+                ? `<img class="link-card-icon" src="${link.favicon}" alt="" onerror="this.style.display='none'">`
+                : '';
+
+            linkCard.innerHTML = `
+                <a href="${link.url}" target="_blank" onclick="event.stopPropagation(); trackLinkClick(${link.id})">
+                    <div class="link-card-header">
+                        ${faviconHtml}
+                        <div class="link-name">${link.name}</div>
+                    </div>
+                    <div class="link-url">${link.url}${link.launchDate ? `<span class="link-launch-date">🗓️ ${link.launchDate.replace('-', '/')}</span>` : ''}</div>
+                    <div class="link-stats">
+                        <span class="click-count-badge">🔥 ${stats.clickCount} 次</span>
+                        <span class="last-visit-badge">⏰ ${lastVisitText}</span>
+                    </div>
+                </a>
+                <div class="link-actions">
+                    <button class="btn btn-edit" onclick="openEditLinkModal(${link.id})">编辑</button>
+                    <div class="rec-video-wrap">
+                        <button class="rec-video-btn" onclick="toggleVideoPopover(event,'link-vpop-${link.id}')">
+                            <span class="rec-vbtn-icon">▶</span> 演示视频
+                        </button>
+                        <div class="rec-video-popover" id="link-vpop-${link.id}">
+                            
+                            <div class="rec-vpop-grid">${buildVideoPopoverHtml(link.name, link.url)}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-delete" onclick="deleteLink(${link.id})">删除</button>
+                </div>
+            `;
+
+            return linkCard;
+        }
+
+        // 渲染单个链接
+        function renderLink(link, groupId) {
+            const linksContainer = document.getElementById(`links-${groupId}`);
+            
+            // 移除空提示
+            const emptyMsg = linksContainer.querySelector('.empty-group');
+            if (emptyMsg) emptyMsg.remove();
+            
+            const linkCard = document.createElement('div');
+            linkCard.className = 'link-card';
+            linkCard.dataset.linkId = link.id;
+            
+            // 获取统计信息
+            const stats = data.linkStats[link.id] || { clickCount: 0, lastVisit: null };
+            const lastVisitText = stats.lastVisit ? formatTimeAgo(stats.lastVisit) : '从未访问';
+
+            const faviconHtml = link.favicon
+                ? `<img class="link-card-icon" src="${link.favicon}" alt="" onerror="this.style.display='none'">`
+                : '';
+            
+            linkCard.innerHTML = `
+                <a href="${link.url}" target="_blank" onclick="event.stopPropagation(); trackLinkClick(${link.id})">
+                    <div class="link-card-header">
+                        ${faviconHtml}
+                        <div class="link-name">${link.name}</div>
+                    </div>
+                    <div class="link-url">${link.url}${link.launchDate ? `<span class="link-launch-date">🗓️ ${link.launchDate.replace('-', '/')}</span>` : ''}</div>
+                    <div class="link-stats">
+                        <span class="click-count-badge">🔥 ${stats.clickCount} 次</span>
+                        <span class="last-visit-badge">⏰ ${lastVisitText}</span>
+                    </div>
+                </a>
+                <div class="link-actions">
+                    <button class="btn btn-edit" onclick="openEditLinkModal(${link.id})">编辑</button>
+                    <div class="rec-video-wrap">
+                        <button class="rec-video-btn" onclick="toggleVideoPopover(event,'link-vpop-${link.id}')">
+                            <span class="rec-vbtn-icon">▶</span> 演示视频
+                        </button>
+                        <div class="rec-video-popover" id="link-vpop-${link.id}">
+                            
+                            <div class="rec-vpop-grid">${buildVideoPopoverHtml(link.name, link.url)}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-delete" onclick="deleteLink(${link.id})">删除</button>
+                </div>
+            `;
+            linksContainer.appendChild(linkCard);
+        }
+
+        // 更新分组选择器
+        function updateGroupSelect() {
+            const select = document.getElementById('linkGroup');
+            select.innerHTML = '';
+            data.groups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group.id;
+                option.textContent = group.name;
+                select.appendChild(option);
+            });
+        }
+
+        // 打开添加分组模态框
+        function openAddGroupModal() {
+            document.getElementById('groupName').value = '';
+            openModal('addGroupModal');
+        }
+
+        // 切换分组折叠状态
+        function toggleGroup(groupId) {
+            const index = data.collapsedGroups.indexOf(groupId);
+            if (index > -1) {
+                data.collapsedGroups.splice(index, 1);
+            } else {
+                data.collapsedGroups.push(groupId);
+            }
+            saveData();
+            
+            // 只更新UI，不重新渲染
+            const content = document.getElementById(`content-${groupId}`);
+            const icon = content.previousElementSibling.querySelector('.collapse-icon');
+            
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        }
+
+        // 添加分组
+        function addGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            if (!name) {
+                alert('请输入分组名称');
+                return;
+            }
+
+            const maxOrder = data.groups.length > 0 
+                ? Math.max(...data.groups.map(g => g.order !== undefined ? g.order : 0))
+                : -1;
+
+            const newGroup = {
+                id: Date.now(),
+                name: name,
+                order: maxOrder + 1
+            };
+
+            data.groups.push(newGroup);
+            saveData();
+            renderSidebar();
+            renderGroups();
+            closeModal('addGroupModal');
+        }
+
+        // 打开编辑分组模态框
+        function openEditGroupModal(groupId) {
+            editingGroupId = groupId;
+            const group = data.groups.find(g => g.id === groupId);
+            document.getElementById('editGroupName').value = group.name;
+            openModal('editGroupModal');
+        }
+
+        // 更新分组
+        function updateGroup() {
+            const name = document.getElementById('editGroupName').value.trim();
+            if (!name) {
+                alert('请输入分组名称');
+                return;
+            }
+
+            const group = data.groups.find(g => g.id === editingGroupId);
+            group.name = name;
+            saveData();
+            renderSidebar();
+            renderGroups();
+            closeModal('editGroupModal');
+        }
+
+        // 删除分组
+        function deleteGroup(groupId) {
+            if (!confirm('确定要删除这个分组吗？分组内的所有网址也会被删除。')) {
+                return;
+            }
+
+            data.groups = data.groups.filter(g => g.id !== groupId);
+            data.links = data.links.filter(l => l.groupId !== groupId);
+            
+            // 如果删除的是当前选中的分组，切换到全部
+            if (currentGroupId === groupId) {
+                currentGroupId = null;
+            }
+            
+            saveData();
+            renderSidebar();
+            renderGroups();
+        }
+
+        // 打开添加网址模态框
+        function openAddLinkModal() {
+            if (data.groups.length === 0) {
+                alert('请先添加至少一个分组');
+                return;
+            }
+
+            editingLinkId = null;
+            document.getElementById('linkModalTitle').textContent = '添加网址';
+            document.getElementById('linkName').value = '';
+            document.getElementById('linkUrl').value = '';
+            document.getElementById('linkLaunchDate').value = '';
+            resetFaviconPreview();
+            updateGroupSelect();
+            openModal('addLinkModal');
+        }
+
+        // 打开编辑网址模态框
+        function openEditLinkModal(linkId) {
+            editingLinkId = linkId;
+            const link = data.links.find(l => l.id === linkId);
+            
+            document.getElementById('linkModalTitle').textContent = '编辑网址';
+            document.getElementById('linkName').value = link.name;
+            document.getElementById('linkUrl').value = link.url;
+            updateGroupSelect();
+            document.getElementById('linkGroup').value = link.groupId;
+            
+            // 恢复已有图标
+            resetFaviconPreview();
+            if (link.favicon) {
+                showFaviconPreview(link.favicon, '已保存的图标');
+                document.getElementById('linkFavicon').value = link.favicon;
+            }
+            // 恢复上线时间
+            document.getElementById('linkLaunchDate').value = link.launchDate || '';
+            openModal('addLinkModal');
+        }
+
+        // 保存链接
+        function saveLink() {
+            const name = document.getElementById('linkName').value.trim();
+            const url = document.getElementById('linkUrl').value.trim();
+            const groupId = parseInt(document.getElementById('linkGroup').value);
+            const favicon = document.getElementById('linkFavicon').value.trim();
+            const launchDate = document.getElementById('linkLaunchDate').value.trim();
+
+            if (!name || !url) {
+                alert('请填写完整信息');
+                return;
+            }
+
+            if (editingLinkId) {
+                // 编辑
+                const link = data.links.find(l => l.id === editingLinkId);
+                link.name = name;
+                link.url = url;
+                link.groupId = groupId;
+                if (favicon) link.favicon = favicon;
+                link.launchDate = launchDate || null;
+            } else {
+                // 新增
+                const groupLinks = data.links.filter(l => l.groupId === groupId);
+                const maxOrder = groupLinks.length > 0
+                    ? Math.max(...groupLinks.map(l => l.order !== undefined ? l.order : 0))
+                    : -1;
+
+                const newLink = {
+                    id: Date.now(),
+                    name: name,
+                    url: url,
+                    groupId: groupId,
+                    order: maxOrder + 1,
+                    favicon: favicon || null,
+                    launchDate: launchDate || null
+                };
+                data.links.push(newLink);
+            }
+
+            saveData();
+            renderSidebar();
+            renderGroups();
+            closeModal('addLinkModal');
+        }
+
+        // 删除链接
+        function deleteLink(linkId) {
+            if (!confirm('确定要删除这个网址吗？')) {
+                return;
+            }
+
+            data.links = data.links.filter(l => l.id !== linkId);
+            saveData();
+            renderSidebar();
+            renderGroups();
+        }
+
+        // 导出数据
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'ai-navigator-backup.json';
+            link.click();
+        }
+
+        // 导入数据
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        if (confirm('导入数据将覆盖当前数据，确定继续吗？')) {
+                            data = importedData;
+                            saveData();
+                            renderGroups();
+                            alert('导入成功！');
+                        }
+                    } catch (error) {
+                        alert('导入失败，文件格式不正确');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // 模态框操作
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // 选择图片背景
+        function selectImageBackground() {
+            document.getElementById('imageInput').click();
+        }
+
+        // 选择视频背景
+        function selectVideoBackground() {
+            document.getElementById('videoInput').click();
+        }
+
+        // 处理图片上传
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 检查文件大小（限制为10MB）
+            if (file.size > 10 * 1024 * 1024) {
+                alert('图片文件太大，请选择小于10MB的图片');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                data.background = {
+                    type: 'image',
+                    data: e.target.result
+                };
+                saveData();
+                applyBackground();
+                alert('图片背景已设置！');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 处理视频上传
+        function handleVideoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 检查文件大小（限制为50MB）
+            if (file.size > 50 * 1024 * 1024) {
+                alert('视频文件太大，请选择小于50MB的视频');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                data.background = {
+                    type: 'video',
+                    data: e.target.result
+                };
+                saveData();
+                applyBackground();
+                alert('视频背景已设置！');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 应用背景
+        function applyBackground() {
+            const videoEl = document.getElementById('videoBackground');
+            const imageEl = document.getElementById('imageBackground');
+            const body = document.body;
+
+            // 重置
+            videoEl.style.display = 'none';
+            imageEl.style.display = 'none';
+            body.classList.remove('has-custom-background');
+            videoEl.pause();
+            videoEl.src = '';
+
+            if (data.background.type === 'image' && data.background.data) {
+                imageEl.src = data.background.data;
+                imageEl.style.display = 'block';
+                body.classList.add('has-custom-background');
+            } else if (data.background.type === 'video' && data.background.data) {
+                videoEl.src = data.background.data;
+                videoEl.style.display = 'block';
+                body.classList.add('has-custom-background');
+                videoEl.play().catch(err => {
+                    console.log('视频自动播放失败:', err);
+                });
+            }
+        }
+
+        // 移除背景
+        function removeBackground() {
+            if (confirm('确定要恢复默认渐变背景吗？')) {
+                data.background = {
+                    type: 'gradient',
+                    data: null
+                };
+                saveData();
+                applyBackground();
+                alert('已恢复默认背景！');
+            }
+        }
+
+        // 更新背景模糊强度
+        function updateBgBlur(value) {
+            value = parseInt(value);
+            data.bgBlur = value;
+            const label = value === 0 ? '关闭' : value + 'px';
+            document.getElementById('bgBlurValue').textContent = label;
+            applyBgBlur(value);
+            saveData();
+        }
+
+        // 更新侧边栏模糊强度
+        function updateSidebarBlur(value) {
+            value = parseInt(value);
+            data.sidebarBlur = value;
+            const label = value === 0 ? '关闭' : value + 'px';
+            document.getElementById('sidebarBlurValue').textContent = label;
+            applySidebarBlur(value);
+            saveData();
+        }
+
+        // 应用背景模糊
+        function applyBgBlur(intensity) {
+            intensity = parseInt(intensity) || 0;
+            const overlay = document.querySelector('.background-overlay');
+            if (overlay) {
+                overlay.style.backdropFilter = intensity > 0 ? `blur(${intensity}px)` : 'none';
+                overlay.style.webkitBackdropFilter = intensity > 0 ? `blur(${intensity}px)` : 'none';
+            }
+        }
+
+        // 应用侧边栏模糊
+        function applySidebarBlur(intensity) {
+            intensity = parseInt(intensity) || 0;
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                const saturate = intensity > 0 ? ` saturate(${Math.round(100 + intensity * 3.2)}%)` : '';
+                const blurVal = intensity > 0 ? `blur(${intensity}px)${saturate}` : 'none';
+                sidebar.style.backdropFilter = blurVal;
+                sidebar.style.webkitBackdropFilter = blurVal;
+            }
+        }
+
+        // 初始化毛玻璃效果
+        function initBlurEffect() {
+            const bgIntensity = data.bgBlur || 0;
+            const sidebarIntensity = data.sidebarBlur || 0;
+            document.getElementById('bgBlurSlider').value = bgIntensity;
+            document.getElementById('bgBlurValue').textContent = bgIntensity === 0 ? '关闭' : bgIntensity + 'px';
+            document.getElementById('sidebarBlurSlider').value = sidebarIntensity;
+            document.getElementById('sidebarBlurValue').textContent = sidebarIntensity === 0 ? '关闭' : sidebarIntensity + 'px';
+            applyBgBlur(bgIntensity);
+            applySidebarBlur(sidebarIntensity);
+        }
+
+        // ==================== 拖拽功能 ====================
+
+        // 切换设置面板
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            const overlay = document.getElementById('settingsOverlay');
+            const toggle = document.getElementById('settingsToggle');
+            
+            panel.classList.toggle('active');
+            overlay.classList.toggle('active');
+            toggle.classList.toggle('active');
+        }
+
+        // 使元素可编辑
+        function makeEditable(elementId) {
+            const element = document.getElementById(elementId);
+            const currentText = element.textContent;
+            const isTitle = elementId === 'siteTitle';
+            
+            // 创建输入框
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.className = 'editable-input';
+            input.style.width = isTitle ? '600px' : '400px';
+            input.style.fontSize = isTitle ? '3em' : '1.1em';
+            input.style.fontWeight = isTitle ? '800' : 'normal';
+            input.style.letterSpacing = isTitle ? '2px' : '1px';
+            
+            // 替换元素
+            element.replaceWith(input);
+            input.focus();
+            input.select();
+            
+            // 保存函数
+            const saveEdit = () => {
+                const newText = input.value.trim() || currentText;
+                
+                // 恢复原元素
+                const newElement = document.createElement(isTitle ? 'h1' : 'p');
+                newElement.id = elementId;
+                newElement.textContent = newText;
+                newElement.onclick = () => makeEditable(elementId);
+                newElement.title = isTitle ? '点击编辑标题' : '点击编辑副标题';
+                input.replaceWith(newElement);
+                
+                // 保存到数据
+                if (elementId === 'siteTitle') {
+                    data.siteTitle = newText;
+                } else if (elementId === 'siteSubtitle') {
+                    data.siteSubtitle = newText;
+                }
+                saveData();
+            };
+            
+            // 回车或失焦保存
+            input.addEventListener('blur', saveEdit);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    saveEdit();
+                }
+            });
+            
+            // ESC取消
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const newElement = document.createElement(isTitle ? 'h1' : 'p');
+                    newElement.id = elementId;
+                    newElement.textContent = currentText;
+                    newElement.onclick = () => makeEditable(elementId);
+                    newElement.title = isTitle ? '点击编辑标题' : '点击编辑副标题';
+                    input.replaceWith(newElement);
+                }
+            });
+        }
+
+        // 设置分组拖拽事件
+        function setupGroupDragEvents(groupDiv) {
+            const dragHandle = groupDiv.querySelector('.drag-handle');
+            
+            dragHandle.addEventListener('dragstart', (e) => {
+                e.stopPropagation();
+                draggedElement = groupDiv;
+                draggedType = 'group';
+                draggedId = parseInt(groupDiv.dataset.groupId);
+                groupDiv.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            groupDiv.addEventListener('dragend', () => {
+                groupDiv.classList.remove('dragging');
+                draggedElement = null;
+                draggedType = null;
+                draggedId = null;
+            });
+
+            groupDiv.addEventListener('dragover', (e) => {
+                if (draggedType !== 'group') return;
+                e.preventDefault();
+                const afterElement = getDragAfterElement(groupDiv.parentElement, e.clientY, 'group');
+                if (afterElement == null) {
+                    groupDiv.parentElement.appendChild(draggedElement);
+                } else {
+                    groupDiv.parentElement.insertBefore(draggedElement, afterElement);
+                }
+            });
+
+            groupDiv.addEventListener('drop', (e) => {
+                if (draggedType !== 'group') return;
+                e.preventDefault();
+                reorderGroups();
+            });
+        }
+
+
+
+        // 获取拖拽后的位置
+        function getDragAfterElement(container, y, type) {
+            const selector = type === 'group' ? '.group:not(.dragging)' : '.link-card:not(.dragging)';
+            const draggableElements = [...container.querySelectorAll(selector)];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // 重新排序分组
+        function reorderGroups() {
+            const groupElements = document.querySelectorAll('.group');
+            groupElements.forEach((el, index) => {
+                const groupId = parseInt(el.dataset.groupId);
+                const group = data.groups.find(g => g.id === groupId);
+                if (group) {
+                    group.order = index;
+                }
+            });
+            saveData();
+        }
+
+
+        // 记录链接点击
+        function trackLinkClick(linkId) {
+            if (!data.linkStats[linkId]) {
+                data.linkStats[linkId] = { clickCount: 0, lastVisit: null };
+            }
+            data.linkStats[linkId].clickCount++;
+            data.linkStats[linkId].lastVisit = Date.now();
+            saveData();
+            // 更新最近使用区域
+            renderRecentLinks();
+        }
+
+        // 格式化时间
+        function formatTimeAgo(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return '刚刚';
+            if (minutes < 60) return `${minutes}分钟前`;
+            if (hours < 24) return `${hours}小时前`;
+            if (days < 7) return `${days}天前`;
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        // 渲染侧边栏
+        function renderSidebar() {
+            const container = document.getElementById('sidebarGroups');
+            container.innerHTML = '';
+
+            // 添加"Hub"选项
+            const allGroup = document.createElement('div');
+            allGroup.className = 'sidebar-group' + (currentGroupId === null ? ' active' : '');
+            allGroup.innerHTML = `
+                <div class="sidebar-group-name">🏠 Hub</div>
+                <div class="sidebar-group-count">${data.links.length}</div>
+            `;
+            allGroup.onclick = () => switchGroup(null);
+            container.appendChild(allGroup);
+
+            // 按order排序
+            const sortedGroups = [...data.groups].sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 999;
+                const orderB = b.order !== undefined ? b.order : 999;
+                return orderA - orderB;
+            });
+
+            sortedGroups.forEach(group => {
+                const linkCount = data.links.filter(link => link.groupId === group.id).length;
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'sidebar-group' + (currentGroupId === group.id ? ' active' : '');
+                
+                groupDiv.innerHTML = `
+                    <div class="sidebar-group-name">${group.name}</div>
+                    <div class="sidebar-group-count">${linkCount}</div>
+                    <div class="sidebar-group-actions">
+                        <button class="sidebar-group-action-btn" onclick="event.stopPropagation(); openEditGroupModal(${group.id})" title="编辑">✏️</button>
+                        <button class="sidebar-group-action-btn" onclick="event.stopPropagation(); deleteGroup(${group.id})" title="删除">🗑️</button>
+                    </div>
+                `;
+                
+                groupDiv.onclick = () => switchGroup(group.id);
+                container.appendChild(groupDiv);
+            });
+        }
+
+        // 切换分组
+        function switchGroup(groupId) {
+            currentGroupId = groupId;
+            renderSidebar();
+            renderGroups();
+        }
+
+        // 渲染最近使用区域 - 在侧边栏分组下方显示
+        function renderRecentLinks() {
+            const container = document.getElementById('sidebarRecentLinks');
+            container.innerHTML = '';
+
+            // 获取有点击记录的链接
+            const linksWithStats = data.links
+                .filter(link => data.linkStats[link.id] && data.linkStats[link.id].clickCount > 0)
+                .map(link => ({
+                    ...link,
+                    stats: data.linkStats[link.id]
+                }))
+                .sort((a, b) => {
+                    // 按最后访问时间排序
+                    return b.stats.lastVisit - a.stats.lastVisit;
+                })
+                .slice(0, 4); // 显示前4个
+
+            if (linksWithStats.length === 0) {
+                container.innerHTML = `
+                    <div class="sidebar-recent-empty">
+                        <div class="sidebar-recent-empty-icon">📭</div>
+                        <div>暂无访问记录</div>
+                    </div>
+                `;
+                return;
+            }
+
+            linksWithStats.forEach(link => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'sidebar-recent-item';
+                
+                const isHot = link.stats.clickCount >= 5;
+                const lastVisitText = formatTimeAgo(link.stats.lastVisit);
+                
+                itemDiv.innerHTML = `
+                    ${isHot ? '<div class="sidebar-recent-hot">🔥 HOT</div>' : ''}
+                    <a href="${link.url}" target="_blank" onclick="trackLinkClick(${link.id})">
+                        <div class="sidebar-recent-name">${link.name}</div>
+                        <div class="sidebar-recent-url">${link.url}</div>
+                        <div class="sidebar-recent-stats">
+                            <span class="sidebar-recent-badge sidebar-recent-clicks">🔥 ${link.stats.clickCount}</span>
+                            <span class="sidebar-recent-badge sidebar-recent-time">⏰ ${lastVisitText}</span>
+                        </div>
+                    </a>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        // 初始化侧边栏调整功能
+        function initSidebarResizer() {
+            const sidebar = document.getElementById('sidebar');
+            const resizer = document.getElementById('sidebarResizer');
+            const container = document.querySelector('.container');
+            
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            // 从localStorage加载保存的宽度
+            const savedWidth = localStorage.getItem('sidebarWidth');
+            if (savedWidth) {
+                setSidebarWidth(parseInt(savedWidth));
+            }
+
+            resizer.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = sidebar.offsetWidth;
+                resizer.classList.add('active');
+                document.body.style.cursor = 'ew-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const deltaX = e.clientX - startX;
+                const newWidth = startWidth + deltaX;
+
+                // 限制最小和最大宽度
+                if (newWidth >= 150 && newWidth <= 400) {
+                    setSidebarWidth(newWidth);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('active');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    
+                    // 保存宽度到localStorage
+                    localStorage.setItem('sidebarWidth', sidebar.offsetWidth);
+                }
+            });
+
+            function setSidebarWidth(width) {
+                sidebar.style.width = width + 'px';
+                container.style.marginLeft = (width + 20) + 'px';
+            }
+        }
+
+        // ========== 排序功能 ==========
+        
+        // 更新排序UI状态
+        // 改变排序类型
+        function changeSortType(sortType) {
+            data.sortConfig.type = sortType;
+            saveData();
+            renderGroups();
+        }
+        
+        // 切换排序方向
+        function toggleSortOrder() {
+            data.sortConfig.order = data.sortConfig.order === 'asc' ? 'desc' : 'asc';
+            saveData();
+            renderGroups();
+        }
+        
+        // 对链接进行排序
+        function sortLinks(links) {
+            const sortType = data.sortConfig.type;
+            const sortOrder = data.sortConfig.order;
+            
+            // 创建副本以避免修改原数组
+            const sortedLinks = [...links];
+            
+            switch(sortType) {
+                case 'name':
+                    // 按名称排序
+                    sortedLinks.sort((a, b) => {
+                        const comparison = a.name.localeCompare(b.name, 'zh-CN');
+                        return sortOrder === 'asc' ? comparison : -comparison;
+                    });
+                    break;
+                    
+                case 'clicks':
+                    // 按访问次数排序
+                    sortedLinks.sort((a, b) => {
+                        const aClicks = data.linkStats[a.id]?.clickCount || 0;
+                        const bClicks = data.linkStats[b.id]?.clickCount || 0;
+                        const comparison = aClicks - bClicks;
+                        return sortOrder === 'asc' ? comparison : -comparison;
+                    });
+                    break;
+                    
+                case 'recent':
+                    // 按最近访问时间排序
+                    sortedLinks.sort((a, b) => {
+                        const aTime = data.linkStats[a.id]?.lastVisit || 0;
+                        const bTime = data.linkStats[b.id]?.lastVisit || 0;
+                        const comparison = aTime - bTime;
+                        return sortOrder === 'asc' ? comparison : -comparison;
+                    });
+                    break;
+            }
+            
+            return sortedLinks;
+        }
+
+        // ========== Favicon 获取功能 ==========
+
+        let faviconUrlInputTimer = null;
+
+        // 可用的 favicon 来源
+        function getFaviconSources(url) {
+            try {
+                const u = new URL(url);
+                const origin = u.origin;
+                const domain = u.hostname;
+                return [
+                    {
+                        label: 'Google',
+                        url: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+                    },
+                    {
+                        label: 'Favicon.io',
+                        url: `https://favicons.githubusercontent.com/${domain}`
+                    },
+                    {
+                        label: '直接获取',
+                        url: `${origin}/favicon.ico`
+                    }
+                ];
+            } catch(e) {
+                return [];
+            }
+        }
+
+        // 当 URL 输入时防抖触发
+        function onUrlInput() {
+            clearTimeout(faviconUrlInputTimer);
+            faviconUrlInputTimer = setTimeout(() => autoFetchFavicon(), 900);
+        }
+
+        // 自动获取 favicon
+        function autoFetchFavicon(manual = false) {
+            const url = document.getElementById('linkUrl').value.trim();
+            if (!url) return;
+            try { new URL(url); } catch(e) { return; }
+
+            const sources = getFaviconSources(url);
+            if (!sources.length) return;
+
+            // 显示预览区
+            const group = document.getElementById('faviconPreviewGroup');
+            group.style.display = '';
+
+            // 重置状态
+            const box = document.getElementById('faviconPreviewBox');
+            const img = document.getElementById('faviconPreviewImg');
+            const info = document.getElementById('faviconPreviewInfo');
+            const btns = document.getElementById('faviconSourceBtns');
+
+            box.classList.add('loading');
+            img.style.display = 'none';
+            img.src = '';
+            info.className = 'favicon-preview-info';
+            info.textContent = '正在获取图标...';
+            btns.innerHTML = '';
+            document.getElementById('linkFavicon').value = '';
+
+            // 尝试第一个来源（Google），如果失败自动切换
+            tryFaviconSource(sources, 0, () => {
+                // 全部失败后渲染按钮让用户手动选
+                renderFaviconSourceBtns(sources, -1);
+                info.className = 'favicon-preview-info error';
+                info.textContent = '自动获取失败，请尝试手动切换来源';
+            });
+        }
+
+        // 尝试指定来源
+        function tryFaviconSource(sources, idx, onAllFailed) {
+            if (idx >= sources.length) {
+                onAllFailed();
+                return;
+            }
+            const src = sources[idx];
+            loadFaviconImg(src.url, (success) => {
+                const box = document.getElementById('faviconPreviewBox');
+                const img = document.getElementById('faviconPreviewImg');
+                const info = document.getElementById('faviconPreviewInfo');
+                const btns = document.getElementById('faviconSourceBtns');
+
+                box.classList.remove('loading');
+
+                if (success) {
+                    img.style.display = '';
+                    img.src = src.url;
+                    document.getElementById('linkFavicon').value = src.url;
+                    info.className = 'favicon-preview-info success';
+                    info.textContent = `✅ 已获取图标（来源：${src.label}）`;
+                    renderFaviconSourceBtns(sources, idx);
+                } else {
+                    tryFaviconSource(sources, idx + 1, onAllFailed);
+                }
+            });
+        }
+
+        // 预加载图片检测是否成功
+        function loadFaviconImg(src, callback) {
+            const testImg = new Image();
+            testImg.onload = () => {
+                // 过滤掉 1x1 占位图（Google 返回空图标时是 16x16 灰图，大小检测）
+                if (testImg.naturalWidth >= 8 && testImg.naturalHeight >= 8) {
+                    callback(true);
+                } else {
+                    callback(false);
+                }
+            };
+            testImg.onerror = () => callback(false);
+            testImg.src = src;
+        }
+
+        // 渲染来源切换按钮
+        function renderFaviconSourceBtns(sources, activeIdx) {
+            const btns = document.getElementById('faviconSourceBtns');
+            btns.innerHTML = '';
+            sources.forEach((src, i) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'favicon-source-btn' + (i === activeIdx ? ' active' : '');
+                btn.textContent = src.label;
+                btn.onclick = () => selectFaviconSource(sources, i);
+                btns.appendChild(btn);
+            });
+        }
+
+        // 手动切换来源
+        function selectFaviconSource(sources, idx) {
+            const src = sources[idx];
+            const box = document.getElementById('faviconPreviewBox');
+            const img = document.getElementById('faviconPreviewImg');
+            const info = document.getElementById('faviconPreviewInfo');
+
+            box.classList.add('loading');
+            img.style.display = 'none';
+
+            loadFaviconImg(src.url, (success) => {
+                box.classList.remove('loading');
+                if (success) {
+                    img.style.display = '';
+                    img.src = src.url;
+                    document.getElementById('linkFavicon').value = src.url;
+                    info.className = 'favicon-preview-info success';
+                    info.textContent = `✅ 已获取图标（来源：${src.label}）`;
+                    renderFaviconSourceBtns(sources, idx);
+                } else {
+                    info.className = 'favicon-preview-info error';
+                    info.textContent = `❌ 来源"${src.label}"获取失败`;
+                    renderFaviconSourceBtns(sources, -1);
+                }
+            });
+        }
+
+        // 显示已有图标（编辑模式）
+        function showFaviconPreview(faviconUrl, label) {
+            const group = document.getElementById('faviconPreviewGroup');
+            group.style.display = '';
+            const img = document.getElementById('faviconPreviewImg');
+            const info = document.getElementById('faviconPreviewInfo');
+            const box = document.getElementById('faviconPreviewBox');
+            box.classList.remove('loading');
+            img.style.display = '';
+            img.src = faviconUrl;
+            info.className = 'favicon-preview-info success';
+            info.textContent = `✅ ${label}`;
+        }
+
+        // 重置预览区
+        function resetFaviconPreview() {
+            document.getElementById('faviconPreviewGroup').style.display = 'none';
+            document.getElementById('faviconPreviewImg').src = '';
+            document.getElementById('faviconPreviewImg').style.display = 'none';
+            document.getElementById('faviconPreviewBox').classList.remove('loading');
+            document.getElementById('faviconPreviewInfo').textContent = '';
+            document.getElementById('faviconSourceBtns').innerHTML = '';
+            document.getElementById('linkFavicon').value = '';
+        }
+
+        // 图标加载失败时隐藏
+        function onFaviconError(img) {
+            img.style.display = 'none';
+        }
+
+        // ========== 批量获取所有图标 ==========
+
+        async function batchFetchAllFavicons() {
+            const links = data.links;
+            if (!links.length) { alert('暂无网址，请先添加链接。'); return; }
+
+            openModal('batchFaviconModal');
+            const statusEl  = document.getElementById('batchFaviconStatus');
+            const barEl     = document.getElementById('batchFaviconBar');
+            const logEl     = document.getElementById('batchFaviconLog');
+            const closeBtn  = document.getElementById('batchFaviconCloseBtn');
+
+            logEl.innerHTML = '';
+            barEl.style.width = '0%';
+            closeBtn.disabled = true;
+
+            let done = 0, success = 0, skip = 0, fail = 0;
+            const total = links.length;
+
+            function appendLog(icon, text, color) {
+                const line = document.createElement('div');
+                line.innerHTML = `<span>${icon}</span> <span style="color:${color}">${text}</span>`;
+                logEl.appendChild(line);
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+
+            function updateStatus() {
+                statusEl.innerHTML =
+                    `处理进度：<b>${done}/${total}</b> &nbsp;|&nbsp; ` +
+                    `<span style="color:#27ae60">✅ ${success} 成功</span> &nbsp;` +
+                    `<span style="color:#667eea">⏭️ ${skip} 已有</span> &nbsp;` +
+                    `<span style="color:#e53e3e">❌ ${fail} 失败</span>`;
+                barEl.style.width = Math.round(done / total * 100) + '%';
+            }
+
+            updateStatus();
+
+            for (const link of links) {
+                done++;
+
+                // 已有图标则跳过
+                if (link.favicon) {
+                    skip++;
+                    appendLog('⏭️', `跳过（已有图标）：${link.name}`, '#667eea');
+                    updateStatus();
+                    continue;
+                }
+
+                const sources = getFaviconSources(link.url);
+                if (!sources.length) {
+                    fail++;
+                    appendLog('❌', `URL 无效：${link.name}`, '#e53e3e');
+                    updateStatus();
+                    continue;
+                }
+
+                // 依次尝试来源
+                let found = false;
+                for (const src of sources) {
+                    const ok = await new Promise(resolve => loadFaviconImg(src.url, resolve));
+                    if (ok) {
+                        link.favicon = src.url;
+                        success++;
+                        appendLog('✅', `${link.name}（${src.label}）`, '#27ae60');
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    fail++;
+                    appendLog('❌', `获取失败：${link.name}`, '#e53e3e');
+                }
+
+                updateStatus();
+
+                // 每处理完一条稍作停顿，避免请求过于密集
+                await new Promise(r => setTimeout(r, 120));
+            }
+
+            // 完成
+            saveData();
+            renderGroups();
+
+            statusEl.innerHTML =
+                `<b style="color:#27ae60">✅ 全部完成！</b> &nbsp;成功 ${success} 个 · 已有 ${skip} 个 · 失败 ${fail} 个`;
+            barEl.style.width = '100%';
+            appendLog('🎉', '批量获取完成，页面已自动刷新！', '#764ba2');
+            closeBtn.disabled = false;
+        }
+
+        // ========== 封装HTML（将当前数据内嵌到HTML文件并下载）==========
+
+        function packAndDownloadHTML() {
+            // 1. 获取当前完整 HTML 源码
+            const html = document.documentElement.outerHTML;
+
+            // 2. 序列化当前数据（不含 linkStats 中的临时状态，保留全部）
+            const jsonStr = JSON.stringify(data);
+
+            // 3. 替换 else 分支中内嵌的 data = {...}; 语句
+            //    匹配模式：data = { ... }; （可能跨多行，用非贪婪）
+            //    由于 JSON 可能很长，我们用特定注释锚点来精确替换
+            const marker = '// 从备份数据初始化';
+            const assignStart = html.indexOf(marker);
+            if (assignStart === -1) {
+                alert('❌ 未找到数据锚点，无法封装。');
+                return;
+            }
+
+            // 找 marker 之后的 "data = " 和下一个 ";\n"（结束）
+            const dataEqIdx = html.indexOf('data = ', assignStart);
+            if (dataEqIdx === -1) {
+                alert('❌ 未找到内嵌 data 赋值语句。');
+                return;
+            }
+
+            // 找到 data = 后的第一个 { 开始，到对应的 }; 结束
+            // 简单策略：找 ";\n                saveData();" 作为结束定界
+            const endMarker = ';\n                saveData();';
+            const endIdx = html.indexOf(endMarker, dataEqIdx);
+            if (endIdx === -1) {
+                alert('❌ 未找到数据结束定界符。');
+                return;
+            }
+
+            // 替换
+            const before = html.slice(0, dataEqIdx);
+            const after  = html.slice(endIdx); // 保留 ;\n  saveData(); 之后的部分
+            const newHtml = before + 'data = ' + jsonStr + after;
+
+            // 4. 下载
+            const blob = new Blob([newHtml], { type: 'text/html;charset=utf-8' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            const ts   = new Date().toISOString().slice(0, 10);
+            a.href     = url;
+            a.download = `ai-navigator-${ts}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ========== 智能推荐网址（多 AI 服务商）==========
+
+        let recommendTopic = 'auto';
+        let recommendIsLoading = false;
+        let currentProvider = 'claude';
+
+        // 服务商配置表
+        const PROVIDERS = {
+            claude: {
+                name: 'Claude (Anthropic)',
+                keyPlaceholder: 'sk-ant-api03-...',
+                keyHint: '前往 <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> 获取 API Key',
+                models: ['claude-sonnet-4-20250514', 'claude-opus-4-20250514', 'claude-haiku-4-5-20251001'],
+                defaultModel: 'claude-sonnet-4-20250514',
+            },
+            openai: {
+                name: 'ChatGPT (OpenAI)',
+                keyPlaceholder: 'sk-...',
+                keyHint: '前往 <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a> 获取 API Key',
+                models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+                defaultModel: 'gpt-4o-mini',
+            },
+            gemini: {
+                name: 'Gemini (Google)',
+                keyPlaceholder: 'AIza...',
+                keyHint: '前往 <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> 获取 API Key',
+                models: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+                defaultModel: 'gemini-2.0-flash',
+            },
+            deepseek: {
+                name: 'DeepSeek',
+                keyPlaceholder: 'sk-...',
+                keyHint: '前往 <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a> 获取 API Key',
+                models: ['deepseek-chat', 'deepseek-reasoner'],
+                defaultModel: 'deepseek-chat',
+            },
+            qwen: {
+                name: '通义千问 (阿里云)',
+                keyPlaceholder: 'sk-...',
+                keyHint: '前往 <a href="https://bailian.console.aliyun.com/" target="_blank">阿里云百炼</a> 获取 API Key',
+                models: ['qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-long'],
+                defaultModel: 'qwen-plus',
+            },
+            zhipu: {
+                name: '智谱 GLM',
+                keyPlaceholder: 'your-api-key',
+                keyHint: '前往 <a href="https://open.bigmodel.cn/usercenter/apikeys" target="_blank">open.bigmodel.cn</a> 获取 API Key',
+                models: ['glm-4-flash', 'glm-4-air', 'glm-4', 'glm-4-plus'],
+                defaultModel: 'glm-4-flash',
+            },
+            moonshot: {
+                name: 'Kimi (月之暗面)',
+                keyPlaceholder: 'sk-...',
+                keyHint: '前往 <a href="https://platform.moonshot.cn/console/api-keys" target="_blank">platform.moonshot.cn</a> 获取 API Key',
+                models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+                defaultModel: 'moonshot-v1-8k',
+            },
+            custom: {
+                name: '自定义（OpenAI 兼容）',
+                keyPlaceholder: 'API Key',
+                keyHint: '填入你的 OpenAI 兼容 API 端点和 Key，适用于本地部署（Ollama、LM Studio 等）',
+                models: ['gpt-4o', 'gpt-3.5-turbo', 'llama3', 'qwen2.5'],
+                defaultModel: 'gpt-4o',
+            },
+        };
+
+        // 加载保存的提供商偏好
+        function loadProviderPrefs() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('recProviderPrefs') || '{}');
+                return saved;
+            } catch(e) { return {}; }
+        }
+
+        function saveProviderPrefs() {
+            const prefs = {
+                provider: currentProvider,
+                model: document.getElementById('recModelSelect').value,
+                customEndpoint: document.getElementById('recCustomEndpoint').value,
+            };
+            localStorage.setItem('recProviderPrefs', JSON.stringify(prefs));
+        }
+
+        function selectProvider(el, providerId) {
+            document.querySelectorAll('.rec-provider-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            currentProvider = providerId;
+            updateProviderUI();
+            saveProviderPrefs();
+            // 更新折叠摘要
+            updateProviderSummary();
+        }
+
+        function toggleProviderSection() {
+            const toggle = document.getElementById('providerToggle');
+            const body   = document.getElementById('providerCollapsible');
+            const collapsed = toggle.classList.toggle('collapsed');
+            body.classList.toggle('collapsed', collapsed);
+        }
+
+        function updateProviderSummary() {
+            const p = PROVIDERS[currentProvider];
+            if (!p) return;
+            const items = document.querySelectorAll('.rec-provider-item');
+            let logo = '🤖', name = currentProvider;
+            items.forEach(item => {
+                if (item.dataset.id === currentProvider) {
+                    logo = item.querySelector('.rec-pi-logo')?.textContent || '🤖';
+                    name = item.querySelector('.rec-pi-name')?.textContent || currentProvider;
+                }
+            });
+            const iconEl = document.getElementById('providerSummaryIcon');
+            const nameEl = document.getElementById('providerSummaryName');
+            if (iconEl) iconEl.textContent = logo;
+            if (nameEl) nameEl.textContent = name;
+        }
+
+        function updateProviderUI() {
+            const p = PROVIDERS[currentProvider];
+            if (!p) return;
+
+            document.getElementById('recommendApiKey').placeholder = p.keyPlaceholder;
+            document.getElementById('recProviderHint').innerHTML = p.keyHint;
+
+            // 更新模型下拉
+            const sel = document.getElementById('recModelSelect');
+            sel.innerHTML = p.models.map(m => `<option value="${m}">${m}</option>`).join('');
+            sel.value = p.defaultModel;
+
+            // 自定义端点
+            document.getElementById('recCustomEndpointRow').style.display = currentProvider === 'custom' ? 'block' : 'none';
+
+            // 恢复保存的值
+            const prefs = loadProviderPrefs();
+            if (prefs.provider === currentProvider && prefs.model && p.models.includes(prefs.model)) {
+                sel.value = prefs.model;
+            }
+            if (prefs.customEndpoint) {
+                document.getElementById('recCustomEndpoint').value = prefs.customEndpoint;
+            }
+            updateProviderSummary();
+        }
+
+        function openRecommendModal() {
+            openModal('recommendModal');
+            // 关闭设置面板
+            const panel = document.getElementById('settingsPanel');
+            if (panel && panel.classList.contains('active')) toggleSettings();
+
+            // 恢复上次使用的服务商
+            const prefs = loadProviderPrefs();
+            if (prefs.provider && PROVIDERS[prefs.provider]) {
+                currentProvider = prefs.provider;
+                document.querySelectorAll('.rec-provider-card').forEach(c => {
+                    c.classList.toggle('active', c.dataset.id === currentProvider);
+                });
+            }
+            updateProviderUI();
+
+            // 恢复 API Key
+            const savedKey = localStorage.getItem(`recApiKey_${currentProvider}`);
+            if (savedKey) document.getElementById('recommendApiKey').value = savedKey;
+        }
+
+        // 切换服务商时自动保存/恢复 Key
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('recommendApiKey').addEventListener('change', () => {
+                const key = document.getElementById('recommendApiKey').value.trim();
+                if (key) localStorage.setItem(`recApiKey_${currentProvider}`, key);
+            });
+        });
+
+        function selectRecommendTopic(el, topic) {
+            document.querySelectorAll('.rec-topic-item').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            recommendTopic = topic;
+            // 清空自定义输入
+            const inp = document.getElementById('recCustomTopicInput');
+            const wrap = document.getElementById('recCustomTopicWrap');
+            if (inp) { inp.value = ''; inp.classList.remove('active'); }
+            if (wrap) wrap.classList.remove('has-value');
+        }
+
+        function onCustomTopicInput() {
+            const inp  = document.getElementById('recCustomTopicInput');
+            const wrap = document.getElementById('recCustomTopicWrap');
+            const val  = inp.value.trim();
+            if (val) {
+                // 取消所有预设选中
+                document.querySelectorAll('.rec-topic-item').forEach(c => c.classList.remove('active'));
+                recommendTopic = 'custom';
+                inp.classList.add('active');
+                wrap.classList.add('has-value');
+            } else {
+                inp.classList.remove('active');
+                wrap.classList.remove('has-value');
+                // 恢复自动推断选中
+                recommendTopic = 'auto';
+                const autoItem = document.querySelector('.rec-topic-item[onclick*="auto"]');
+                if (autoItem) autoItem.classList.add('active');
+            }
+        }
+
+        function clearCustomTopic() {
+            const inp  = document.getElementById('recCustomTopicInput');
+            const wrap = document.getElementById('recCustomTopicWrap');
+            inp.value = '';
+            inp.classList.remove('active');
+            wrap.classList.remove('has-value');
+            recommendTopic = 'auto';
+            const autoItem = document.querySelector('.rec-topic-item[onclick*="auto"]');
+            if (autoItem) autoItem.classList.add('active');
+            inp.focus();
+        }
+
+        // 统一调用不同 API 并返回纯文本
+        async function callProviderAPI(systemPrompt, userPrompt) {
+            const apiKey = document.getElementById('recommendApiKey').value.trim();
+            const model  = document.getElementById('recModelSelect').value;
+
+            if (!apiKey) throw new Error('请先填入 API Key');
+
+            if (currentProvider === 'claude') {
+                // ——— Anthropic ———
+                const res = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01',
+                    },
+                    body: JSON.stringify({
+                        model,
+                        max_tokens: 2000,
+                        system: systemPrompt,
+                        messages: [{ role: 'user', content: userPrompt }],
+                    }),
+                });
+                if (!res.ok) {
+                    const e = await res.json().catch(() => ({}));
+                    throw new Error(e.error?.message || `Claude API 错误 ${res.status}`);
+                }
+                const d = await res.json();
+                return d.content?.map(c => c.text || '').join('') || '';
+
+            } else if (currentProvider === 'gemini') {
+                // ——— Google Gemini ———
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: { parts: [{ text: systemPrompt }] },
+                        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+                        generationConfig: { maxOutputTokens: 2000 },
+                    }),
+                });
+                if (!res.ok) {
+                    const e = await res.json().catch(() => ({}));
+                    throw new Error(e.error?.message || `Gemini API 错误 ${res.status}`);
+                }
+                const d = await res.json();
+                return d.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+
+            } else {
+                // ——— OpenAI 兼容（OpenAI / DeepSeek / 通义 / 智谱 / Kimi / Custom）———
+                const endpointMap = {
+                    openai:   'https://api.openai.com/v1/chat/completions',
+                    deepseek: 'https://api.deepseek.com/v1/chat/completions',
+                    qwen:     'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+                    zhipu:    'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+                    moonshot: 'https://api.moonshot.cn/v1/chat/completions',
+                    custom:   (document.getElementById('recCustomEndpoint').value.trim().replace(/\/$/, '') || 'http://localhost:11434/v1') + '/chat/completions',
+                };
+                const endpoint = endpointMap[currentProvider];
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model,
+                        max_tokens: 2000,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user',   content: userPrompt   },
+                        ],
+                    }),
+                });
+                if (!res.ok) {
+                    const e = await res.json().catch(() => ({}));
+                    throw new Error(e.error?.message || `API 错误 ${res.status}`);
+                }
+                const d = await res.json();
+                return d.choices?.[0]?.message?.content || '';
+            }
+        }
+
+        async function generateRecommendations() {
+            if (recommendIsLoading) return;
+
+            // 保存 Key 和偏好
+            const apiKey = document.getElementById('recommendApiKey').value.trim();
+            if (apiKey) localStorage.setItem(`recApiKey_${currentProvider}`, apiKey);
+            saveProviderPrefs();
+
+            const btn     = document.getElementById('recommendGenBtn');
+            const btnIcon = document.getElementById('recommendGenBtnIcon');
+            const btnText = document.getElementById('recommendGenBtnText');
+            const resultsEl = document.getElementById('recommendResults');
+
+            recommendIsLoading = true;
+            btn.disabled = true;
+            btnIcon.textContent = '⏳';
+            btnText.textContent = '生成中...';
+
+            // ── 流式分析日志 ──
+            resultsEl.innerHTML = `
+                <div class="recommend-loading">
+                    <div class="rec-stream-log">
+                        <div class="rec-stream-header">
+                            <div class="rec-stream-spinner"></div>
+                            <div class="rec-stream-header-text">AI 分析引擎运行中</div>
+                        </div>
+                        <div class="rec-stream-body" id="recStreamBody"></div>
+                    </div>
+                </div>`;
+
+            const streamBody = document.getElementById('recStreamBody');
+            let streamStopped = false;
+
+            // 根据收藏内容和推荐方向动态生成分析步骤
+            const linkCount = data.links.length;
+            const customVal2 = (document.getElementById('recCustomTopicInput')?.value || '').trim();
+            const topicLabel = recommendTopic === 'custom' && customVal2 ? customVal2
+                : {auto:'自动推断',chat:'聊天 AI',image:'AI 绘图',code:'AI 编程',productivity:'AI 效率',search:'AI 搜索',video:'AI 视频'}[recommendTopic] || '自动推断';
+
+            const linkNames = data.links.slice(0,5).map(l=>l.name);
+            const sampleNames = linkNames.length ? linkNames.join('、') : '（暂无收藏）';
+
+            const streamSteps = [
+                { delay:0,    icon:'📂', html:`读取收藏列表... <span class="hl3">找到 ${linkCount} 条记录</span>` },
+                { delay:420,  icon:'🔍', html:`扫描已收藏网址：<span class="hl">${sampleNames}${linkCount>5?' 等…':''}</span>` },
+                { delay:900,  icon:'🧠', html:`分析收藏偏好与使用频率<span class="dim">...</span>` },
+                { delay:1500, icon:'📊', html:`识别兴趣画像 <span class="hl2">→ 推荐方向锁定：「${topicLabel}」</span>` },
+                { delay:2100, icon:'🌐', html:`检索 AI 工具数据库<span class="dim">...</span>` },
+                { delay:2800, icon:'⚡', html:`计算相关度评分 &amp; 排除重复收藏<span class="dim">...</span>` },
+                { delay:3600, icon:'🏷️', html:`生成功能权重标签 <span class="dim">[ 占比分析中 ]</span>` },
+                { delay:4400, icon:'🎬', html:`匹配演示视频关键词<span class="dim">...</span>` },
+                { delay:5200, icon:'✨', html:`整理推荐结果<span class="dim">，即将完成...</span>` },
+            ];
+
+            function appendStreamLine(icon, html) {
+                if (!streamBody || streamStopped) return;
+                const line = document.createElement('div');
+                line.className = 'rec-stream-line';
+                line.innerHTML = `<span class="rec-stream-icon">${icon}</span><span class="rec-stream-text">${html}<span class="rec-stream-cursor"></span></span>`;
+                streamBody.appendChild(line);
+                requestAnimationFrame(() => { line.classList.add('visible'); });
+                // remove cursor from previous lines
+                streamBody.querySelectorAll('.rec-stream-cursor').forEach((c,i,arr) => {
+                    if (i < arr.length - 1) c.remove();
+                });
+                streamBody.scrollTop = streamBody.scrollHeight;
+            }
+
+            const streamTimers = [];
+            streamSteps.forEach(step => {
+                const t = setTimeout(() => appendStreamLine(step.icon, step.html), step.delay);
+                streamTimers.push(t);
+            });
+
+            try {
+                const existingLinks = data.links.map(l => `${l.name} (${l.url})`).join('\n');
+                const topicMap = {
+                    auto: '根据用户已有的收藏自动推断最适合的AI工具方向',
+                    chat: '对话式AI、聊天机器人',
+                    image: 'AI图像生成、AI绘图、AI图片编辑',
+                    code: 'AI编程助手、代码生成、开发工具',
+                    productivity: 'AI效率工具、AI写作、AI办公自动化',
+                    search: 'AI搜索引擎、AI知识库',
+                    video: 'AI视频生成、AI视频编辑',
+                };
+                const customVal = (document.getElementById('recCustomTopicInput')?.value || '').trim();
+                const topicDesc = recommendTopic === 'custom' && customVal
+                    ? customVal
+                    : (topicMap[recommendTopic] || topicMap.auto);
+
+                const systemPrompt = `你是一个AI工具推荐专家。请根据用户的收藏为其推荐优质的AI工具和网站。
+规则：
+1. 推荐8-10个工具，必须是真实存在、当前可用的网站
+2. 避免推荐用户已有的网站
+3. 只返回JSON，不包含任何其他文字或markdown代码块标记
+4. tags字段：为每个工具提供3-5个功能标签，用小数权重表示该功能在工具中的占比（所有weight之和等于1.0），按weight从高到低排列。例如GitHub Copilot：[{"name":"编程助手","weight":0.5},{"name":"代码补全","weight":0.3},{"name":"开发工具","weight":0.2}]
+返回格式（严格JSON数组）：
+[{"name":"工具名","url":"https://完整网址","description":"一句话中文描述20字以内","tags":[{"name":"标签","weight":0.5},{"name":"标签","weight":0.3},{"name":"标签","weight":0.2}],"emoji":"一个emoji","videoQuery":"英文搜索词 demo tutorial"}]`;
+
+                const userPrompt = `用户已收藏（共${data.links.length}个）：\n${existingLinks || '（暂无收藏）'}\n\n推荐方向：${topicDesc}\n\n请推荐8-10个用户尚未收藏的AI工具，只返回JSON数组。`;
+
+                const rawText = await callProviderAPI(systemPrompt, userPrompt);
+
+                let recommendations = [];
+                const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    recommendations = JSON.parse(jsonMatch[0]);
+                } else {
+                    throw new Error('AI 返回格式异常，请重试');
+                }
+
+                // 完成行
+                streamStopped = true;
+                streamTimers.forEach(clearTimeout);
+                appendStreamLine('✅', `<span class="hl3">分析完成！找到 ${recommendations.length} 个推荐工具</span>`);
+                await new Promise(r => setTimeout(r, 600));
+
+                renderRecommendations(recommendations);
+
+            } catch (err) {
+                streamStopped = true;
+                streamTimers.forEach(clearTimeout);
+                appendStreamLine('❌', `<span style="color:#fc8181">失败：${err.message}</span>`);
+                await new Promise(r => setTimeout(r, 400));
+                resultsEl.innerHTML = `
+                    <div class="recommend-error">
+                        <strong>⚠️ 推荐失败：</strong>${err.message}<br>
+                        <span style="font-size:12px;opacity:0.8;margin-top:5px;display:block;">
+                            请确认 API Key 正确、网络可访问所选服务商，或尝试更换模型后重试。
+                        </span>
+                    </div>`;
+            } finally {
+                recommendIsLoading = false;
+                btn.disabled = false;
+                btnIcon.textContent = '🔄';
+                btnText.textContent = '重新推荐';
+            }
+        }
+
+        function renderRecommendations(items) {
+            const resultsEl = document.getElementById('recommendResults');
+            if (!items || !items.length) {
+                resultsEl.innerHTML = '<div class="recommend-empty"><div class="recommend-empty-icon">😕</div><div class="recommend-empty-text">暂时没有合适的推荐，请换个方向试试</div></div>';
+                return;
+            }
+
+            const existingUrls = new Set(data.links.map(l => {
+                try { return new URL(l.url).hostname; } catch(e) { return l.url; }
+            }));
+
+            const groupOptions = data.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+            const groupSelectHtml = data.groups.length
+                ? `<select class="recommend-group-select" id="rg_{IDX}">${groupOptions}</select>`
+                : `<select class="recommend-group-select" id="rg_{IDX}" disabled><option>（先建分组）</option></select>`;
+
+            let html = `<div class="recommend-section-title">✨ AI 为你推荐了 ${items.length} 个工具</div>`;
+
+            items.forEach((item, idx) => {
+                let hostname = '';
+                try { hostname = new URL(item.url).hostname; } catch(e) {}
+                const alreadyHave = hostname && existingUrls.has(hostname);
+                const faviconUrl = hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=64` : '';
+                const selHtml = groupSelectHtml.replace(/{IDX}/g, idx);
+
+                // 视频搜索链接
+                const vq     = encodeURIComponent((item.videoQuery || item.name + ' demo tutorial').trim());
+                const vqCn   = encodeURIComponent((item.videoQuery || item.name + ' 演示教程').trim());
+                const platforms = [
+                    { icon:'▶️', name:'YouTube',  sub:'英文教程', bg:'rgba(255,0,0,0.06)',   border:'rgba(255,0,0,0.18)',   url:`https://www.youtube.com/results?search_query=${vq}` },
+                    { icon:'📺', name:'哔哩哔哩', sub:'中文教程', bg:'rgba(0,161,214,0.07)', border:'rgba(0,161,214,0.2)',  url:`https://search.bilibili.com/all?keyword=${vqCn}` },
+                    { icon:'🎵', name:'TikTok',   sub:'英文短视频',bg:'rgba(0,0,0,0.05)',    border:'rgba(0,0,0,0.1)',      url:`https://www.tiktok.com/search?q=${vq}` },
+                    { icon:'🎶', name:'抖音',     sub:'中文短视频',bg:'rgba(254,44,85,0.06)', border:'rgba(254,44,85,0.2)', url:`https://www.douyin.com/search/${vqCn}` },
+                ];
+                const platHtml = platforms.map(p => `
+                    <a class="rec-video-platform" href="${p.url}" target="_blank" rel="noopener"
+                       style="--plat-bg:${p.bg};--plat-border:${p.border}">
+                        <span class="rec-video-platform-icon">${p.icon}</span>
+                        <span>
+                            <span style="display:block">${p.name}</span>
+                            <span class="rec-video-platform-sub">${p.sub}</span>
+                        </span>
+                    </a>`).join('');
+
+                html += `
+                <div class="recommend-card ${alreadyHave ? 'added' : ''}" id="rec-card-${idx}">
+                    <div>
+                        ${faviconUrl ? `<img class="recommend-card-favicon" src="${faviconUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="">` : ''}
+                        <div class="recommend-card-favicon-fallback" style="${faviconUrl ? 'display:none' : ''}">${item.emoji || '🔗'}</div>
+                    </div>
+                    <div class="recommend-card-info">
+                        <div class="recommend-card-name">${item.emoji || ''} ${item.name}</div>
+                        <a class="recommend-card-url" href="${item.url}" target="_blank" title="${item.url}">${item.url}</a>
+                        <div class="recommend-card-desc">${item.description}</div>
+                        <div class="recommend-card-tags">
+                            ${(() => {
+                                const tags = (item.tags && item.tags.length)
+                                    ? item.tags.slice().sort((a,b) => b.weight - a.weight)
+                                    : [{name: item.category || '工具', weight: 1.0}];
+                                // Normalize weights to sum=1 in case AI drifts
+                                const total = tags.reduce((s,t) => s + (t.weight||0), 0) || 1;
+                                return tags.map(t => {
+                                    const w = (t.weight||0) / total;
+                                    // font-size: 9.5px (w≤0.1) → 12px (w≥0.5), linearly
+                                    const fs   = Math.round((9.5 + Math.min(w, 0.5) / 0.5 * 2.5) * 10) / 10;
+                                    // opacity: 0.55 → 1.0
+                                    const op   = (0.55 + Math.min(w, 0.5) / 0.5 * 0.45).toFixed(2);
+                                    // padding grows with weight
+                                    const py   = w >= 0.4 ? 3 : 2;
+                                    const px   = w >= 0.4 ? 10 : w >= 0.2 ? 8 : 7;
+                                    // border thickness
+                                    const bw   = w >= 0.4 ? '1.5px' : '1px';
+                                    // colour intensity
+                                    const bgA  = (0.06 + w * 0.22).toFixed(2);
+                                    const bdA  = (0.12 + w * 0.22).toFixed(2);
+                                    const pct  = Math.round(w * 100);
+                                    return `<span class="rec-tag" title="功能占比 ${pct}%" style="font-size:${fs}px;opacity:${op};padding:${py}px ${px}px;background:rgba(102,126,234,${bgA});color:#5a67d8;border:${bw} solid rgba(102,126,234,${bdA});">${t.name}<span class="rec-tag-pct">${pct}%</span></span>`;
+                                }).join('');
+                            })()}
+                            ${alreadyHave ? '<span class="rec-tag rec-tag-added">✅ 已收藏</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="recommend-card-actions">
+                        ${alreadyHave
+                            ? `<button class="recommend-add-btn added" disabled>已收藏</button>`
+                            : `${selHtml}<button class="recommend-add-btn" id="rec-btn-${idx}" onclick="addRecommendedLink(${idx}, '${escapeForAttr(item.name)}', '${escapeForAttr(item.url)}', '${escapeForAttr(faviconUrl)}')">＋ 添加</button>`
+                        }
+                        <div class="rec-video-wrap">
+                            <button class="rec-video-btn" onclick="toggleVideoPopover(event,'rec-vpop-${idx}')">
+                                <span class="rec-vbtn-icon">▶</span> 演示视频
+                            </button>
+                            <div class="rec-video-popover" id="rec-vpop-${idx}">
+                                
+                                <div class="rec-vpop-grid">${platHtml}</div>
+                            </div>
+                        </div>
+                        <a class="recommend-open-btn" href="${item.url}" target="_blank">访问 ↗</a>
+                    </div>
+                </div>`;
+            });
+
+            resultsEl.innerHTML = html;
+        }
+
+        function escapeForAttr(str) {
+            return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        function buildVideoPopoverHtml(name, url) {
+            const query = encodeURIComponent((name + ' tutorial').trim());
+            const queryCn = encodeURIComponent((name + ' 教程').trim());
+            const platforms = [
+                { name:'YouTube',  bg:'rgba(255,0,0,0.06)',    border:'rgba(255,0,0,0.18)',   url:`https://www.youtube.com/results?search_query=${query}` },
+                { name:'哔哩哔哩', bg:'rgba(0,161,214,0.07)',  border:'rgba(0,161,214,0.2)',  url:`https://search.bilibili.com/all?keyword=${queryCn}` },
+                { name:'TikTok',   bg:'rgba(0,0,0,0.05)',      border:'rgba(0,0,0,0.1)',      url:`https://www.tiktok.com/search?q=${query}` },
+                { name:'抖音',     bg:'rgba(254,44,85,0.06)',  border:'rgba(254,44,85,0.2)',  url:`https://www.douyin.com/search/${queryCn}` },
+            ];
+            return platforms.map(p => `
+                <a class="rec-video-platform" href="${p.url}" target="_blank" rel="noopener"
+                   style="--plat-bg:${p.bg};--plat-border:${p.border}">
+                    <span style="display:block">${p.name}</span>
+                </a>`).join('');
+        }
+
+        function toggleVideoPopover(e, popId) {
+            e.stopPropagation();
+            const pop = document.getElementById(popId);
+            if (!pop) return;
+            const isOpen = pop.classList.contains('open');
+            // close all others
+            document.querySelectorAll('.rec-video-popover.open').forEach(p => p.classList.remove('open'));
+            if (!isOpen) pop.classList.add('open');
+        }
+
+        // 点击空白处关闭视频弹窗
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.rec-video-popover.open').forEach(p => p.classList.remove('open'));
+        });
+
+        function addRecommendedLink(idx, name, url, favicon) {
+            const select = document.getElementById(`rg_${idx}`);
+            const groupId = select ? select.value : (data.groups[0]?.id || null);
+            if (!groupId) { alert('请先在侧边栏添加一个分组！'); return; }
+
+            const newLink = {
+                id: Date.now() + '_' + Math.random().toString(36).slice(2,7),
+                name, url, favicon: favicon || '', groupId,
+            };
+            data.links.push(newLink);
+            saveData();
+            renderGroups();
+            renderSidebar();
+
+            const btn = document.getElementById(`rec-btn-${idx}`);
+            if (btn) { btn.textContent = '✅ 已添加'; btn.classList.add('added'); btn.disabled = true; }
+            const card = document.getElementById(`rec-card-${idx}`);
+            if (card) card.classList.add('added');
+        }
+
+        // 页面加载时初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
