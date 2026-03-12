@@ -2328,6 +2328,8 @@
         .sidebar::-webkit-scrollbar-thumb {
             background: #999 !important;
         }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 
     <style>
@@ -2373,6 +2375,53 @@
             0%,100%{transform:scale(1);} 50%{transform:scale(1.2);}
         }
 
+        /* ===== 双击扇形菜单按钮 ===== */
+        .ai-radial-btn {
+            position: fixed;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.4);
+            transition: opacity 0.2s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+            color: white;
+        }
+        .ai-radial-btn.show {
+            opacity: 1;
+            pointer-events: all;
+            transform: scale(1);
+        }
+        .ai-radial-btn:hover {
+            transform: scale(1.15) !important;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+        }
+        .ai-radial-btn-label {
+            position: fixed;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            background: rgba(50,50,80,0.82);
+            padding: 2px 8px;
+            border-radius: 8px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10000;
+        }
+        .ai-radial-btn.show + .ai-radial-btn-label,
+        .ai-radial-btn-label.show { opacity: 1; }
+
+
         .ai-chat-panel {
             position: fixed;
             bottom: 90px;
@@ -2387,16 +2436,407 @@
             z-index: 9997;
             overflow: hidden;
             border: 1px solid rgba(102,126,234,0.18);
-            transform: scale(0.85) translateY(20px);
+            transform: scale(0.88) translateX(12px);
             opacity: 0;
             pointer-events: none;
-            transition: transform 0.28s cubic-bezier(.34,1.56,.64,1), opacity 0.22s ease;
             backdrop-filter: blur(20px);
+            transform-origin: right center;
         }
         .ai-chat-panel.open {
-            transform: scale(1) translateY(0);
+            transform: scale(1) translateX(0);
             opacity: 1;
             pointer-events: all;
+        }
+        /* 单击：仅输入框模式 */
+        .ai-chat-panel.compact-mode {
+            width: 340px;
+            height: auto;
+            min-height: unset;
+        }
+        .ai-chat-panel.compact-mode .ai-chat-header,
+        .ai-chat-panel.compact-mode .ai-chat-messages,
+        .ai-chat-panel.compact-mode .ai-chat-mode-hint {
+            display: none;
+        }
+        .ai-chat-panel.compact-mode .ai-chat-footer {
+            display: block;
+            border-top: none;
+            border-radius: 18px;
+            padding: 10px 12px;
+        }
+        .ai-chat-panel.compact-mode .ai-chat-footer-note {
+            display: none;
+        }
+
+        /* 独立输出窗口（双击） */
+        .ai-output-panel {
+            position: fixed;
+            bottom: 90px;
+            left: 24px;
+            width: 380px;
+            height: 480px;
+            background: rgba(255,255,255,0.97);
+            border-radius: 18px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.18), 0 2px 8px rgba(102,126,234,0.12);
+            display: flex;
+            flex-direction: column;
+            z-index: 9996;
+            overflow: hidden;
+            border: 1px solid rgba(102,126,234,0.18);
+            transform: scale(0.88);
+            opacity: 0;
+            pointer-events: none;
+            backdrop-filter: blur(20px);
+            transform-origin: bottom left;
+        }
+        .ai-output-panel.open {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+        .ai-output-header {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            cursor: grab;
+            user-select: none;
+        }
+        .ai-output-header:active { cursor: grabbing; }
+        .ai-output-header-icon { font-size: 18px; }
+        .ai-output-header-title {
+            font-size: 13px;
+            font-weight: 700;
+            flex: 1;
+            letter-spacing: 0.3px;
+        }
+        .ai-output-header-sub {
+            font-size: 10px;
+            opacity: 0.75;
+        }
+        .ai-output-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .ai-output-close:hover { background: rgba(255,255,255,0.35); }
+        /* 磁吸状态：输出面板吸附到输入面板上方 */
+        .ai-output-panel.snapped {
+            border-radius: 18px 18px 0 0;
+            border-bottom: 2px dashed rgba(102,126,234,0.35);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+        }
+        .ai-chat-panel.snap-host {
+            border-radius: 0 0 18px 18px;
+            border-top: none;
+        }
+        /* 磁吸预览线（水平，显示在输入面板顶部） */
+        .snap-preview-line {
+            position: fixed;
+            height: 3px;
+            width: 0;
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            border-radius: 2px;
+            z-index: 10000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s, width 0.18s ease;
+            box-shadow: 0 0 10px rgba(102,126,234,0.8), 0 0 20px rgba(118,75,162,0.5);
+        }
+        .snap-preview-line.show { opacity: 1; }
+        /* 磁吸吸引高亮 */
+        .ai-output-panel.snap-attract {
+            outline: 2px solid rgba(102,126,234,0.55);
+            outline-offset: 2px;
+        }
+        /* 磁吸图标提示 */
+        .snap-indicator {
+            position: absolute;
+            top: 50%;
+            right: -12px;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.5);
+            pointer-events: none;
+        }
+        .snap-indicator.show { opacity: 1; }
+        /* 拆除按钮（吸附时显示） */
+        .ai-output-detach-btn {
+            display: none;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            margin-right: 2px;
+            title: "拆除";
+        }
+
+        /* ===== 推荐模式 ===== */
+        .ai-output-panel.recommend-mode .ai-output-messages {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .rec-cat-bar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            padding: 10px 12px 8px;
+            border-bottom: 1px solid rgba(102,126,234,0.12);
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.97);
+        }
+        .rec-cat-btn {
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1.5px solid #e2e8f0;
+            background: #fff;
+            color: #667eea;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+            white-space: nowrap;
+        }
+        .rec-cat-btn.active {
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: #fff;
+            border-color: transparent;
+        }
+        .rec-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .rec-list::-webkit-scrollbar { width: 4px; }
+        .rec-list::-webkit-scrollbar-thumb { background: rgba(102,126,234,0.25); border-radius: 2px; }
+        .rec-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 11px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 11px;
+            background: #fff;
+            transition: border-color 0.18s, box-shadow 0.18s;
+            cursor: default;
+        }
+        .rec-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102,126,234,0.13);
+        }
+        .rec-card-icon { font-size: 20px; flex-shrink: 0; }
+        .rec-card-info { flex: 1; min-width: 0; }
+        .rec-card-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #2d3748;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .rec-card-desc { font-size: 11px; color: #a0aec0; margin-top: 1px; }
+        .rec-add-btn {
+            flex-shrink: 0;
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s;
+        }
+        .rec-add-btn:not(:disabled) {
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: #fff;
+        }
+        .rec-add-btn:disabled {
+            background: #e2e8f0;
+            color: #a0aec0;
+            cursor: default;
+        }
+        /* 推荐模式下输入框样式 */
+        .ai-chat-panel.recommend-input-mode .ai-chat-footer-note { display: none; }
+        .ai-chat-panel.recommend-input-mode .ai-chat-messages,
+        .ai-chat-panel.recommend-input-mode .ai-chat-header,
+        .ai-chat-panel.recommend-input-mode .ai-chat-mode-hint { display: none !important; }
+        .ai-chat-panel.recommend-input-mode .ai-chat-footer {
+            border-top: none;
+            border-radius: 18px;
+            padding: 10px 12px;
+        }
+
+
+        /* ===== API 设置面板模式 ===== */
+        .ai-output-panel.api-mode .ai-output-messages {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .api-panel-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .api-panel-list::-webkit-scrollbar { width: 4px; }
+        .api-panel-list::-webkit-scrollbar-thumb { background: rgba(102,126,234,0.25); border-radius: 2px; }
+        .api-panel-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 11px;
+            border: 1.5px solid rgba(102,126,234,0.18);
+            border-radius: 11px;
+            background: #fff;
+            cursor: pointer;
+            transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+        }
+        .api-panel-card:hover { border-color: #667eea; box-shadow: 0 2px 10px rgba(102,126,234,0.13); }
+        .api-panel-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102,126,234,0.07), rgba(118,75,162,0.07));
+            box-shadow: 0 0 0 2px rgba(102,126,234,0.15);
+        }
+        .api-panel-card-logo {
+            width: 30px; height: 30px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px; flex-shrink: 0;
+        }
+        .api-panel-card-info { flex: 1; min-width: 0; }
+        .api-panel-card-name { font-size: 12.5px; font-weight: 700; color: #2d3748; }
+        .api-panel-card-desc { font-size: 11px; color: #a0aec0; margin-top: 1px; }
+        .api-panel-card-status {
+            font-size: 10.5px; padding: 2px 7px; border-radius: 20px; font-weight: 600; flex-shrink: 0;
+        }
+        .api-panel-card-status.ok  { background: rgba(72,187,120,0.14); color: #276749; border: 1px solid rgba(72,187,120,0.28); }
+        .api-panel-card-status.no  { background: rgba(160,174,192,0.14); color: #718096; border: 1px solid rgba(160,174,192,0.28); }
+
+        /* 输入面板 API 模式 */
+        .ai-chat-panel.api-input-mode .ai-chat-messages,
+        .ai-chat-panel.api-input-mode .ai-chat-header,
+        .ai-chat-panel.api-input-mode .ai-chat-mode-hint { display: none !important; }
+        .ai-chat-panel.api-input-mode .ai-chat-footer {
+            border-top: none; border-radius: 18px; padding: 12px 14px;
+        }
+        .api-input-panel-body { display: flex; flex-direction: column; gap: 9px; width: 100%; }
+        .api-input-panel-provider {
+            font-size: 12.5px; font-weight: 700; color: #667eea;
+            display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+        }
+        .api-input-panel-label { font-size: 11.5px; color: #718096; margin-bottom: 3px; }
+        .api-input-panel-row { display: flex; gap: 7px; align-items: center; }
+        .api-input-panel-actions { display: flex; gap: 7px; }
+        .api-panel-btn {
+            padding: 7px 13px; border-radius: 8px; border: none;
+            font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.18s;
+        }
+        .api-panel-btn-save {
+            background: linear-gradient(135deg,#667eea,#764ba2); color: white;
+            flex: 1;
+        }
+        .api-panel-btn-save:hover { opacity: 0.88; }
+        .api-panel-btn-use {
+            background: rgba(102,126,234,0.1); color: #667eea;
+            border: 1.5px solid rgba(102,126,234,0.25); flex: 1;
+        }
+        .api-panel-btn-use.in-use {
+            background: rgba(72,187,120,0.12); color: #276749;
+            border-color: rgba(72,187,120,0.3);
+        }
+        .api-panel-btn-clear {
+            background: rgba(245,101,101,0.1); color: #c53030;
+            border: 1.5px solid rgba(245,101,101,0.2); padding: 7px 10px;
+        }
+        .api-panel-btn-clear:hover { background: rgba(245,101,101,0.2); }
+        .api-warn-tip {
+            font-size: 11px; color: #92400e; line-height: 1.5;
+            background: rgba(245,158,11,0.09); border: 1px solid rgba(245,158,11,0.22);
+            border-radius: 8px; padding: 7px 10px;
+        }
+
+
+
+        .ai-output-panel.snapped .ai-output-detach-btn {
+            display: flex;
+        }
+        .ai-output-detach-btn:hover { background: rgba(255,255,255,0.35); }
+        .ai-output-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+        }
+        .ai-output-messages::-webkit-scrollbar { width: 4px; }
+        .ai-output-messages::-webkit-scrollbar-track { background: transparent; }
+        .ai-output-messages::-webkit-scrollbar-thumb {
+            background: rgba(102,126,234,0.2);
+            border-radius: 2px;
+        }
+        .ai-output-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #a0aec0;
+            font-size: 13px;
+            gap: 8px;
+        }
+        .ai-output-empty-icon { font-size: 36px; opacity: 0.4; }
+        /* 单击/双击提示条 */
+        .ai-chat-mode-hint {
+            text-align: center;
+            padding: 5px 10px;
+            font-size: 10.5px;
+            color: #a0aec0;
+            background: rgba(102,126,234,0.04);
+            border-top: 1px solid rgba(102,126,234,0.08);
+            flex-shrink: 0;
+            letter-spacing: 0.3px;
+        }
+        .ai-chat-mode-hint span {
+            color: #667eea;
+            font-weight: 600;
         }
 
         /* 漫画主题覆盖 */
@@ -2577,6 +3017,118 @@
         .ai-chat-suggestion:hover {
             background: rgba(102,126,234,0.18);
             border-color: #667eea;
+        }
+        .ai-chat-suggestion {
+            position: relative;
+        }
+        .ai-chat-suggestion .tag-del {
+            display: none;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 16px;
+            height: 16px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            line-height: 16px;
+            text-align: center;
+            cursor: pointer;
+            font-style: normal;
+            z-index: 10;
+            box-shadow: 0 1px 4px rgba(239,68,68,0.4);
+        }
+        .ai-chat-suggestions.edit-mode .ai-chat-suggestion .tag-del {
+            display: block;
+        }
+        .ai-chat-suggestions.edit-mode .ai-chat-suggestion {
+            animation: tagWiggle 0.4s ease infinite alternate;
+        }
+        @keyframes tagWiggle {
+            from { transform: rotate(-1.5deg); }
+            to   { transform: rotate(1.5deg); }
+        }
+        .ai-chat-add-tag {
+            background: transparent;
+            border: 1px dashed rgba(102,126,234,0.45);
+            color: #667eea;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .ai-chat-add-tag:hover {
+            background: rgba(102,126,234,0.08);
+            border-color: #667eea;
+        }
+        .ai-chat-tag-edit-btn {
+            background: transparent;
+            border: none;
+            color: #a0aec0;
+            font-size: 11px;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin-left: 2px;
+        }
+        .ai-chat-tag-edit-btn:hover { color: #667eea; }
+        .ai-chat-tag-edit-btn.active { color: #ef4444; }
+        /* 新增标签弹窗 */
+        .tag-add-popup {
+            display: none;
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 1px solid rgba(102,126,234,0.25);
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 8px 24px rgba(102,126,234,0.18);
+            z-index: 200;
+            min-width: 260px;
+        }
+        .tag-add-popup.show { display: block; }
+        .tag-add-popup-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+        .tag-add-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .tag-add-input {
+            flex: 1;
+            border: 1.5px solid rgba(102,126,234,0.25);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            outline: none;
+            color: #2d3748;
+        }
+        .tag-add-input:focus { border-color: #667eea; }
+        .tag-add-confirm {
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tag-add-hint {
+            font-size: 10.5px;
+            color: #a0aec0;
         }
 
         .ai-chat-footer {
@@ -3133,6 +3685,27 @@
             <div class="form-actions">
                 <button class="btn btn-cancel" onclick="closeModal('addGroupModal')">取消</button>
                 <button class="btn" onclick="addGroup()">添加</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 网站推荐模态框 -->
+    <div class="modal" id="recommendModal" style="z-index:10010;">
+        <div class="modal-content" style="max-width:520px;max-height:80vh;display:flex;flex-direction:column;">
+            <h2 class="modal-title" style="display:flex;align-items:center;gap:8px;">
+                🌐 网站推荐
+                <button class="modal-close" onclick="closeModal('recommendModal')" style="margin-left:auto;">✕</button>
+            </h2>
+            <p style="font-size:12.5px;color:#718096;margin-bottom:14px;">AI 根据您已收藏的网站，为您智能推荐相关优质网址</p>
+            <div id="recommendStatus" style="display:none;font-size:13px;color:#667eea;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <span style="display:inline-block;width:14px;height:14px;border:2px solid #667eea;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;"></span>
+                AI 正在分析您的网站并生成推荐...
+            </div>
+            <div id="recommendList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;min-height:120px;"></div>
+            <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn" onclick="loadRecommendations()" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;">🔄 重新推荐</button>
+                <button class="btn btn-cancel" onclick="closeModal('recommendModal')">关闭</button>
             </div>
         </div>
     </div>
@@ -4777,7 +5350,7 @@
     </script>
 
     <!-- ===== AI 对话悬浮按钮 ===== -->
-    <button class="ai-chat-toggle" id="aiChatToggle" onclick="toggleAiChat()" title="AI 对话助手">
+    <button class="ai-chat-toggle" id="aiChatToggle" title="单击·同时打开输入框与独立输出">
         <span id="aiChatToggleIcon">🤖</span>
         <span class="ai-chat-badge" id="aiChatBadge"></span>
     </button>
@@ -4801,12 +5374,7 @@
                 <div class="ai-chat-welcome-icon">✨</div>
                 <h3>你好！我是 AI 助手</h3>
                 <p>有任何问题都可以问我，我会尽力帮助您！</p>
-                <div class="ai-chat-suggestions">
-                    <span class="ai-chat-suggestion" onclick="sendSuggestion('推荐一些好用的AI工具')">🔧 推荐AI工具</span>
-                    <span class="ai-chat-suggestion" onclick="sendSuggestion('如何提高工作效率？')">⚡ 提高效率</span>
-                    <span class="ai-chat-suggestion" onclick="sendSuggestion('写一段自我介绍')">✍️ 写自我介绍</span>
-                    <span class="ai-chat-suggestion" onclick="sendSuggestion('今天适合做什么？')">📅 每日建议</span>
-                </div>
+                <div class="ai-chat-suggestions" id="aiChatSuggestions" style="position:relative;"></div>
             </div>
         </div>
 
@@ -4826,6 +5394,38 @@
             </div>
             <div class="ai-chat-footer-note">由 Claude AI 提供支持 · Shift+Enter 换行</div>
         </div>
+        <div class="ai-chat-mode-hint">💡 <span>单击</span> 同时打开输入框与独立输出</div>
+    </div>
+
+    <!-- ===== AI 对话按钮覆盖：移除 onclick，改用 JS 绑定单击/双击 ===== -->
+
+    <!-- ===== AI 独立输出窗口（双击） ===== -->
+
+    <!-- ===== 双击扇形菜单 ===== -->
+    <button class="ai-radial-btn" id="aiRadialTop"    title="AI 对话">💬</button>
+    <div class="ai-radial-btn-label" id="aiRadialTopLabel">AI 对话</div>
+    <button class="ai-radial-btn" id="aiRadialLeft"   title="API 设置">⚙️</button>
+    <div class="ai-radial-btn-label" id="aiRadialLeftLabel">API 设置</div>
+    <button class="ai-radial-btn" id="aiRadialBottom" title="网站推荐">🌐</button>
+    <div class="ai-radial-btn-label" id="aiRadialBottomLabel">网站推荐</div>
+    <div class="snap-preview-line" id="snapPreviewLine"></div>
+    <div class="ai-output-panel" id="aiOutputPanel">
+        <div class="ai-output-header" id="aiOutputHeader">
+            <div class="ai-output-header-icon">💬</div>
+            <div style="flex:1">
+                <div class="ai-output-header-title">AI 对话输出</div>
+                <div class="ai-output-header-sub" id="aiOutputSub">拖拽移动 · 靠近输入框可吸附</div>
+            </div>
+            <button class="ai-output-detach-btn" onclick="detachOutputPanel()" title="拆除磁吸">🔓</button>
+            <button class="ai-output-close" onclick="closeOutputPanel()" title="关闭">✕</button>
+        </div>
+        <div class="ai-output-messages" id="aiOutputMessages">
+            <div class="ai-output-empty" id="aiOutputEmpty">
+                <div class="ai-output-empty-icon">💭</div>
+                <div>暂无对话内容</div>
+                <div style="font-size:11px;opacity:0.7">在输入框发送消息后这里会显示</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -4841,6 +5441,112 @@
         let didMove = false;
 
         const btn = document.getElementById('aiChatToggle');
+
+        // ---- 单击/双击区分 ----
+        let radialVisible = false;
+        let clickTimer = null;
+
+        function positionRadialBtns() {
+            const r = btn.getBoundingClientRect();
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height / 2;
+            const dist = 72;
+            const btnSize = 44;
+            const labelGap = 6;
+
+            // 上
+            const top = document.getElementById('aiRadialTop');
+            const topLabel = document.getElementById('aiRadialTopLabel');
+            top.style.left = (cx - btnSize/2) + 'px';
+            top.style.top  = (cy - dist - btnSize/2) + 'px';
+            top.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
+            topLabel.style.left = (cx - 28) + 'px';
+            topLabel.style.top  = (cy - dist - btnSize/2 - 22) + 'px';
+
+            // 左
+            const left = document.getElementById('aiRadialLeft');
+            const leftLabel = document.getElementById('aiRadialLeftLabel');
+            left.style.left = (cx - dist - btnSize/2) + 'px';
+            left.style.top  = (cy - btnSize/2) + 'px';
+            left.style.background = 'linear-gradient(135deg,#f093fb,#f5576c)';
+            leftLabel.style.left = (cx - dist - btnSize/2 - 56) + 'px';
+            leftLabel.style.top  = (cy - 10) + 'px';
+
+            // 下
+            const bottom = document.getElementById('aiRadialBottom');
+            const bottomLabel = document.getElementById('aiRadialBottomLabel');
+            bottom.style.left = (cx - btnSize/2) + 'px';
+            bottom.style.top  = (cy + dist - btnSize/2) + 'px';
+            bottom.style.background = 'linear-gradient(135deg,#43e97b,#38f9d7)';
+            bottomLabel.style.left = (cx - 28) + 'px';
+            bottomLabel.style.top  = (cy + dist + btnSize/2 + labelGap) + 'px';
+        }
+
+        function showRadialMenu() {
+            radialVisible = true;
+            positionRadialBtns();
+            ['aiRadialTop','aiRadialLeft','aiRadialBottom'].forEach((id, i) => {
+                const el = document.getElementById(id);
+                setTimeout(() => { el.classList.add('show'); }, i * 50);
+            });
+            ['aiRadialTopLabel','aiRadialLeftLabel','aiRadialBottomLabel'].forEach((id, i) => {
+                const el = document.getElementById(id);
+                setTimeout(() => { el.classList.add('show'); }, i * 50 + 80);
+            });
+            document.addEventListener('click', hideRadialOnOutside, { capture: true, once: true });
+        }
+
+        function hideRadialMenu() {
+            radialVisible = false;
+            ['aiRadialTop','aiRadialLeft','aiRadialBottom',
+             'aiRadialTopLabel','aiRadialLeftLabel','aiRadialBottomLabel'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('show');
+            });
+        }
+
+        function hideRadialOnOutside(e) {
+            const ids = ['aiRadialTop','aiRadialLeft','aiRadialBottom','aiChatToggle'];
+            if (!ids.some(id => document.getElementById(id)?.contains(e.target))) {
+                hideRadialMenu();
+            }
+        }
+
+        // 绑定按钮动作
+        document.getElementById('aiRadialTop').onclick = function(e) {
+            e.stopPropagation();
+            hideRadialMenu();
+            openAiChat('compact');
+            openOutputPanel();
+        };
+        document.getElementById('aiRadialLeft').onclick = function(e) {
+            e.stopPropagation();
+            hideRadialMenu();
+            openApiModal();
+        };
+        document.getElementById('aiRadialBottom').onclick = function(e) {
+            e.stopPropagation();
+            hideRadialMenu();
+            openRecommendPanel();
+        };
+
+        btn.addEventListener('click', function(e) {
+            if (didMove) { didMove = false; return; }
+            if (radialVisible) { hideRadialMenu(); return; }
+            if (clickTimer) {
+                // 双击 → 弹出扇形菜单
+                clearTimeout(clickTimer);
+                clickTimer = null;
+                showRadialMenu();
+            } else {
+                // 单击（等待确认非双击）
+                clickTimer = setTimeout(() => {
+                    clickTimer = null;
+                    openAiChat('compact');
+                    openOutputPanel();
+                }, 250);
+            }
+        });
 
         function getPos() {
             const rect = btn.getBoundingClientRect();
@@ -4881,8 +5587,34 @@
             btn.style.bottom = newBottom + 'px';
             btn.style.top = 'auto';
 
-            // 同步更新面板位置
+            // 吸附状态：两个面板一起移动，不解除吸附
+            if (isSnapped) {
+                updatePanelPos(newLeft, newBottom);
+                return;
+            }
+
+            // 未吸附：正常更新位置 + 磁吸检测
             updatePanelPos(newLeft, newBottom);
+
+            const inPanel  = document.getElementById('aiChatPanel');
+            const outPanel = document.getElementById('aiOutputPanel');
+            const previewLine = document.getElementById('snapPreviewLine');
+            if (outPanel && outPanel.classList.contains('open') && inPanel && inPanel.classList.contains('open')) {
+                const dist = getSnapDist(outPanel, inPanel);
+                if (dist !== null && dist < SNAP_THRESHOLD) {
+                    showSnapPreview(previewLine, inPanel);
+                    outPanel.classList.add('snap-attract');
+                    if (dist < SNAP_COMMIT) {
+                        const or = outPanel.getBoundingClientRect();
+                        const snapBottom = window.innerHeight - or.bottom - 4;
+                        btn.style.bottom = Math.max(8, snapBottom) + 'px';
+                        updatePanelPos(newLeft, Math.max(8, snapBottom));
+                    }
+                } else {
+                    if (previewLine) previewLine.classList.remove('show');
+                    outPanel.classList.remove('snap-attract');
+                }
+            }
         });
 
         document.addEventListener('mouseup', function(e) {
@@ -4890,6 +5622,20 @@
             isDragging = false;
             btn.style.transition = '';
             btn.style.cursor = '';
+
+            const previewLine = document.getElementById('snapPreviewLine');
+            const inPanel  = document.getElementById('aiChatPanel');
+            const outPanel = document.getElementById('aiOutputPanel');
+            if (previewLine) previewLine.classList.remove('show');
+            if (outPanel) outPanel.classList.remove('snap-attract');
+
+            // 松手时若在吸附范围内，执行磁吸
+            if (!isSnapped && outPanel && outPanel.classList.contains('open') && inPanel && inPanel.classList.contains('open')) {
+                const dist = getSnapDist(outPanel, inPanel);
+                if (dist !== null && dist < SNAP_THRESHOLD) {
+                    doSnap(outPanel, inPanel);
+                }
+            }
         });
 
         // 触摸支持
@@ -4921,59 +5667,378 @@
             btn.style.right = 'auto';
             btn.style.bottom = newBottom + 'px';
             btn.style.top = 'auto';
+            // 吸附状态：两个面板一起移动
+            if (isSnapped) {
+                updatePanelPos(newLeft, newBottom);
+                return;
+            }
+
             updatePanelPos(newLeft, newBottom);
+
+            const inPanel  = document.getElementById('aiChatPanel');
+            const outPanel = document.getElementById('aiOutputPanel');
+            if (outPanel && outPanel.classList.contains('open') && inPanel && inPanel.classList.contains('open')) {
+                const dist = getSnapDist(outPanel, inPanel);
+                if (dist !== null && dist < SNAP_COMMIT) {
+                    const or = outPanel.getBoundingClientRect();
+                    const snapBottom = window.innerHeight - or.bottom - 4;
+                    btn.style.bottom = Math.max(8, snapBottom) + 'px';
+                    updatePanelPos(newLeft, Math.max(8, snapBottom));
+                }
+            }
         }, { passive: true });
 
         document.addEventListener('touchend', function() {
             isDragging = false;
             btn.style.transition = '';
-        });
 
-        // 拦截点击：如果拖动了就不触发 toggleAiChat
-        btn.addEventListener('click', function(e) {
-            if (didMove) { didMove = false; e.stopImmediatePropagation(); }
-        }, true);
+            const inPanel  = document.getElementById('aiChatPanel');
+            const outPanel = document.getElementById('aiOutputPanel');
+            if (!isSnapped && outPanel && outPanel.classList.contains('open') && inPanel && inPanel.classList.contains('open')) {
+                const dist = getSnapDist(outPanel, inPanel);
+                if (dist !== null && dist < SNAP_THRESHOLD) doSnap(outPanel, inPanel);
+            }
+        });
     })();
 
+    // 面板定位到按钮右侧（空间不足则左侧）
     function updatePanelPos(btnLeft, btnBottom) {
         const panel = document.getElementById('aiChatPanel');
-        const panelW = panel.offsetWidth || 380;
+        const btn   = document.getElementById('aiChatToggle');
+        const panelW = panel.offsetWidth  || 380;
         const panelH = panel.offsetHeight || 560;
-        const btnW = document.getElementById('aiChatToggle').offsetWidth;
-        const margin = 10;
+        const btnW   = btn.offsetWidth || 52;
+        const btnH   = btn.offsetHeight || 52;
+        const gap    = 14;
+        const vw     = window.innerWidth;
+        const vh     = window.innerHeight;
 
-        // 面板优先显示在按钮上方
-        let pBottom = btnBottom + btnW + margin;
-        let pLeft = btnLeft + btnW / 2 - panelW / 2;
+        // 垂直：面板底部与按钮底部对齐，必要时上移
+        let pBottom = btnBottom;
+        // 若面板顶端超出视口，上调
+        const topEdge = vh - pBottom - panelH;
+        if (topEdge < 8) pBottom = Math.max(8, vh - panelH - 8);
 
-        // 边界修正
-        pLeft = Math.max(8, Math.min(window.innerWidth - panelW - 8, pLeft));
-        if (pBottom + panelH > window.innerHeight - 8) {
-            pBottom = Math.max(8, window.innerHeight - panelH - 8);
+        // 水平：优先放右侧
+        let pLeft = btnLeft + btnW + gap;
+        if (pLeft + panelW > vw - 8) {
+            // 右侧放不下 → 放左侧
+            pLeft = btnLeft - panelW - gap;
         }
+        pLeft = Math.max(8, pLeft);
 
-        panel.style.right = 'auto';
-        panel.style.left = pLeft + 'px';
+        panel.style.right  = 'auto';
+        panel.style.left   = pLeft + 'px';
         panel.style.bottom = pBottom + 'px';
+        panel.style.top    = 'auto';
+        // 修正 transform-origin 方向
+        panel.style.transformOrigin = pLeft > btnLeft ? 'left center' : 'right center';
+
+        // 若输出面板已吸附，同步跟随（上方）
+        if (isSnapped) {
+            const out = document.getElementById('aiOutputPanel');
+            if (out && out.classList.contains('open')) {
+                requestAnimationFrame(() => {
+                    const ir  = panel.getBoundingClientRect();
+                    const gap = 6;
+                    out.style.left  = ir.left + 'px';
+                    out.style.width = ir.width + 'px';
+                    out.style.top   = (ir.top - out.offsetHeight - gap) + 'px';
+                });
+            }
+        }
     }
 
-    function toggleAiChat() {
-        aiChatOpen = !aiChatOpen;
+    // 当前面板模式：null | 'compact' | 'full'
+    let aiChatMode = null;
+    let aiOutputOpen = false;
+
+    // ===== 独立输出面板拖拽 + 磁吸（输出底部 → 输入顶部） =====
+    const SNAP_THRESHOLD = 80; // px 内触发磁吸预览
+    const SNAP_COMMIT    = 40; // px 内松手执行吸附
+    let isSnapped = false;
+
+    (function initOutputDrag() {
+        const panel      = document.getElementById('aiOutputPanel');
+        const header     = document.getElementById('aiOutputHeader');
+        const previewLine = document.getElementById('snapPreviewLine');
+        let dragging = false, sx, sy, sl, st;
+
+        function getInputPanel() { return document.getElementById('aiChatPanel'); }
+
+        // ---- 拖拽开始 ----
+        header.addEventListener('mousedown', e => {
+            if (e.target.closest('button')) return;
+            dragging = true;
+            const r = panel.getBoundingClientRect();
+            sl = r.left; st = r.top;
+            sx = e.clientX; sy = e.clientY;
+            panel.style.transition = 'none';
+            header.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
+
+        // ---- 拖拽中 ----
+        document.addEventListener('mousemove', e => {
+            if (!dragging) return;
+            let nl = sl + (e.clientX - sx);
+            let nt = st + (e.clientY - sy);
+            nl = Math.max(8, Math.min(window.innerWidth  - panel.offsetWidth  - 8, nl));
+            nt = Math.max(8, Math.min(window.innerHeight - panel.offsetHeight - 8, nt));
+            panel.style.left   = nl + 'px';
+            panel.style.top    = nt + 'px';
+            panel.style.bottom = 'auto';
+            panel.style.right  = 'auto';
+
+            // 如果已吸附则先拆开
+            if (isSnapped) detachOutputPanel(true);
+
+            const inp = getInputPanel();
+            const dist = getSnapDist(panel, inp);
+
+            if (dist !== null && dist < SNAP_THRESHOLD) {
+                // 进入磁吸范围：显示预览线 + 高亮
+                showSnapPreview(previewLine, inp);
+                panel.classList.add('snap-attract');
+                // 软吸引：输出底部轻微跟随
+                if (dist < SNAP_COMMIT) {
+                    const ir = inp.getBoundingClientRect();
+                    panel.style.top = (ir.top - panel.offsetHeight - 4) + 'px';
+                }
+            } else {
+                previewLine.classList.remove('show');
+                panel.classList.remove('snap-attract');
+            }
+        });
+
+        // ---- 松手 ----
+        document.addEventListener('mouseup', () => {
+            if (!dragging) return;
+            dragging = false;
+            header.style.cursor = '';
+            panel.style.transition = '';
+            previewLine.classList.remove('show');
+            panel.classList.remove('snap-attract');
+
+            const inp = getInputPanel();
+            const dist = getSnapDist(panel, inp);
+            if (!isSnapped && dist !== null && dist < SNAP_THRESHOLD) {
+                doSnap(panel, inp);
+            }
+        });
+
+        // ---- 触摸支持 ----
+        header.addEventListener('touchstart', e => {
+            if (e.target.closest('button')) return;
+            const t = e.touches[0];
+            dragging = true;
+            const r = panel.getBoundingClientRect();
+            sl = r.left; st = r.top;
+            sx = t.clientX; sy = t.clientY;
+            panel.style.transition = 'none';
+        }, { passive: true });
+
+        document.addEventListener('touchmove', e => {
+            if (!dragging) return;
+            const t = e.touches[0];
+            let nl = sl + (t.clientX - sx);
+            let nt = st + (t.clientY - sy);
+            nl = Math.max(8, Math.min(window.innerWidth  - panel.offsetWidth  - 8, nl));
+            nt = Math.max(8, Math.min(window.innerHeight - panel.offsetHeight - 8, nt));
+            panel.style.left = nl + 'px';
+            panel.style.top  = nt + 'px';
+            panel.style.bottom = 'auto';
+            panel.style.right  = 'auto';
+            if (isSnapped) detachOutputPanel(true);
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            if (!dragging) return;
+            dragging = false;
+            panel.style.transition = '';
+            const inp = getInputPanel();
+            const dist = getSnapDist(panel, inp);
+            if (!isSnapped && dist !== null && dist < SNAP_THRESHOLD) doSnap(panel, inp);
+        });
+    })();
+
+    // 计算输出面板底部 与 输入面板顶部 的距离
+    // 同时要求水平上有一定交叠（宽松：中心点水平距离 < 两者宽之和的75%）
+    function getSnapDist(outPanel, inPanel) {
+        if (!inPanel || !inPanel.classList.contains('open')) return null;
+        const or = outPanel.getBoundingClientRect();
+        const ir = inPanel.getBoundingClientRect();
+        const vertDist = Math.abs(or.bottom - ir.top);
+        const oCx = or.left + or.width  / 2;
+        const iCx = ir.left + ir.width  / 2;
+        const horizLimit = (or.width + ir.width) * 0.75;
+        if (Math.abs(oCx - iCx) > horizLimit) return null;
+        return vertDist;
+    }
+
+    // 显示水平预览光带（贴在输入面板顶部边缘）
+    function showSnapPreview(line, inPanel) {
+        if (!line || !inPanel) return;
+        const ir = inPanel.getBoundingClientRect();
+        line.style.left   = ir.left + 'px';
+        line.style.top    = (ir.top - 1.5) + 'px';
+        line.style.width  = ir.width + 'px';
+        line.classList.add('show');
+    }
+
+    // 执行磁吸：输出底部紧贴输入顶部
+    function doSnap(outPanel, inPanel) {
+        isSnapped = true;
+        const ir  = inPanel.getBoundingClientRect();
+        const gap = 0; // 无间隙，完全贴合
+        outPanel.style.transition = 'left 0.2s cubic-bezier(.34,1.56,.64,1), top 0.2s cubic-bezier(.34,1.56,.64,1), width 0.2s';
+        outPanel.style.left   = ir.left + 'px';
+        outPanel.style.width  = ir.width + 'px';
+        outPanel.style.top    = (ir.top - outPanel.offsetHeight - gap) + 'px';
+        outPanel.style.bottom = 'auto';
+        outPanel.style.right  = 'auto';
+        outPanel.classList.add('snapped');
+        outPanel._snapSide = 'top';
+        inPanel.classList.add('snap-host');
+        const sub = document.getElementById('aiOutputSub');
+        if (sub) sub.textContent = '已吸附 · 拖拽可分离';
+        setTimeout(() => { outPanel.style.transition = ''; }, 300);
+    }
+
+    function detachOutputPanel(silent) {
+        isSnapped = false;
+        const outPanel = document.getElementById('aiOutputPanel');
+        const inPanel  = document.getElementById('aiChatPanel');
+        outPanel.classList.remove('snapped');
+        inPanel.classList.remove('snap-host');
+        outPanel._snapSide = null;
+        if (!silent) {
+            // 非静默模式：小幅上移
+            const r = outPanel.getBoundingClientRect();
+            outPanel.style.transition = 'top 0.2s ease';
+            outPanel.style.top   = Math.max(8, r.top - 16) + 'px';
+            outPanel.style.width = '';
+            setTimeout(() => { outPanel.style.transition = ''; }, 250);
+        } else {
+            outPanel.style.width = '';
+        }
+        const sub = document.getElementById('aiOutputSub');
+        if (sub) sub.textContent = '拖拽移动 · 靠近输入框上方可吸附';
+    }
+
+    function closeOutputPanel() {
+        aiOutputOpen = false;
+        document.getElementById('aiOutputPanel').classList.remove('open');
+    }
+
+    function openOutputPanel() {
+        const panel     = document.getElementById('aiOutputPanel');
+        const inputPanel = document.getElementById('aiChatPanel');
+        if (aiOutputOpen) { closeOutputPanel(); return; }
+        aiOutputOpen = true;
+
+        // 先打开（需要 offsetHeight 可用）
+        panel.classList.add('open');
+        syncOutputMessages();
+
+        // 定位到输入框正上方（吸附）
+        requestAnimationFrame(() => {
+            if (inputPanel && inputPanel.classList.contains('open')) {
+                const ir  = inputPanel.getBoundingClientRect();
+                const gap = 6;
+                panel.style.left   = ir.left + 'px';
+                panel.style.width  = ir.width + 'px';
+                panel.style.top    = (ir.top - panel.offsetHeight - gap) + 'px';
+                panel.style.bottom = 'auto';
+                panel.style.right  = 'auto';
+                panel.classList.add('snapped');
+                panel._snapSide = 'top';
+                inputPanel.classList.add('snap-host');
+                isSnapped = true;
+                const sub = document.getElementById('aiOutputSub');
+                if (sub) sub.textContent = '已吸附 · 拖拽可分离';
+            } else {
+                // 输入框未开，先打开输入框再定位
+                openAiChat('compact');
+                requestAnimationFrame(() => {
+                    const ir  = inputPanel.getBoundingClientRect();
+                    const gap = 6;
+                    panel.style.left   = ir.left + 'px';
+                    panel.style.width  = ir.width + 'px';
+                    panel.style.top    = (ir.top - panel.offsetHeight - gap) + 'px';
+                    panel.style.bottom = 'auto';
+                    panel.style.right  = 'auto';
+                    panel.classList.add('snapped');
+                    panel._snapSide = 'top';
+                    inputPanel.classList.add('snap-host');
+                    isSnapped = true;
+                });
+            }
+        });
+    }
+
+    // 同步主对话消息到输出面板
+    function syncOutputMessages() {
+        const src = document.getElementById('aiChatMessages');
+        const dst = document.getElementById('aiOutputMessages');
+        if (!src || !dst) return;
+        // 克隆消息内容（排除 welcome）
+        const nodes = [...src.children].filter(n => !n.id || n.id !== 'aiChatWelcome');
+        if (nodes.length === 0) {
+            dst.innerHTML = `<div class="ai-output-empty" id="aiOutputEmpty">
+                <div class="ai-output-empty-icon">💭</div>
+                <div>暂无对话内容</div>
+                <div style="font-size:11px;opacity:0.7">在输入框发送消息后这里会显示</div>
+            </div>`;
+        } else {
+            dst.innerHTML = '';
+            nodes.forEach(n => dst.appendChild(n.cloneNode(true)));
+            dst.scrollTop = dst.scrollHeight;
+        }
+    }
+
+    function openAiChat(mode) {
+        if (mode === 'output') { openOutputPanel(); return; }
+
         const panel = document.getElementById('aiChatPanel');
-        const icon = document.getElementById('aiChatToggleIcon');
-        const btn = document.getElementById('aiChatToggle');
+        const icon  = document.getElementById('aiChatToggleIcon');
+        const btn   = document.getElementById('aiChatToggle');
 
-        // Sync panel to current button position before opening
+        // 同模式再次触发 → 关闭
+        if (aiChatOpen && aiChatMode === mode) {
+            aiChatOpen = false;
+            aiChatMode = null;
+            panel.classList.remove('open', 'compact-mode');
+            icon.textContent = '🤖';
+            return;
+        }
+
+        aiChatOpen = true;
+        aiChatMode = mode;
+
         const rect = btn.getBoundingClientRect();
-        const btnLeft = rect.left;
-        const btnBottom = window.innerHeight - rect.bottom;
-        updatePanelPos(btnLeft, btnBottom);
+        updatePanelPos(rect.left, window.innerHeight - rect.bottom);
 
-        panel.classList.toggle('open', aiChatOpen);
-        icon.textContent = aiChatOpen ? '✕' : '🤖';
-        if (aiChatOpen) {
-            document.getElementById('aiChatBadge').classList.remove('show');
+        panel.classList.toggle('compact-mode', mode === 'compact');
+        panel.classList.add('open');
+        icon.textContent = '✕';
+        document.getElementById('aiChatBadge').classList.remove('show');
+
+        if (mode === 'full') {
             setTimeout(() => document.getElementById('aiChatInput').focus(), 300);
+        }
+    }
+
+    // 兼容面板内关闭按钮（仍叫 toggleAiChat）
+    function toggleAiChat() {
+        if (!aiChatOpen) {
+            openAiChat('full');
+        } else {
+            aiChatOpen = false;
+            aiChatMode = null;
+            const panel = document.getElementById('aiChatPanel');
+            panel.classList.remove('open', 'compact-mode');
+            document.getElementById('aiChatToggleIcon').textContent = '🤖';
         }
     }
 
@@ -4985,14 +6050,129 @@
                 <div class="ai-chat-welcome-icon">✨</div>
                 <h3>对话已清空</h3>
                 <p>可以开始新的对话了！</p>
-                <div class="ai-chat-suggestions">
-                    <span class="ai-chat-suggestion" onclick="sendSuggestion('推荐一些好用的AI工具')">🔧 推荐AI工具</span>
-                    <span class="ai-chat-suggestion" onclick="sendSuggestion('如何提高工作效率？')">⚡ 提高效率</span>
-                    <span class="ai-chat-suggestion" onclick="sendSuggestion('写一段自我介绍')">✍️ 写自我介绍</span>
-                    <span class="ai-chat-suggestion" onclick="sendSuggestion('今天适合做什么？')">📅 每日建议</span>
-                </div>
+                <div class="ai-chat-suggestions" id="aiChatSuggestions" style="position:relative;"></div>
             </div>`;
+        renderSuggestionTags();
     }
+
+    // ===== 快捷标签管理 =====
+    const DEFAULT_SUGGESTIONS = [
+        { label: '推荐AI工具⚡', prompt: '推荐一些好用的AI工具' },
+        { label: '提高效率✍️',   prompt: '如何提高工作效率？' },
+        { label: '写自我介绍📝', prompt: '写一段自我介绍' },
+        { label: '每日建议📅',   prompt: '今天适合做什么？' }
+    ];
+    let tagEditMode = false;
+
+    function loadSuggestions() {
+        try {
+            const s = localStorage.getItem('aiChatSuggestions');
+            return s ? JSON.parse(s) : DEFAULT_SUGGESTIONS;
+        } catch(e) { return DEFAULT_SUGGESTIONS; }
+    }
+
+    function saveSuggestions(arr) {
+        localStorage.setItem('aiChatSuggestions', JSON.stringify(arr));
+    }
+
+    function renderSuggestionTags() {
+        const container = document.getElementById('aiChatSuggestions');
+        if (!container) return;
+        const suggestions = loadSuggestions();
+        container.innerHTML = '';
+
+        suggestions.forEach((s, i) => {
+            const span = document.createElement('span');
+            span.className = 'ai-chat-suggestion';
+            span.innerHTML = `${s.label}<i class="tag-del" onclick="deleteSuggestionTag(event,${i})">✕</i>`;
+            span.addEventListener('click', () => { if (!tagEditMode) sendSuggestion(s.prompt); });
+            container.appendChild(span);
+        });
+
+        // 编辑按钮
+        const editBtn = document.createElement('button');
+        editBtn.className = 'ai-chat-tag-edit-btn' + (tagEditMode ? ' active' : '');
+        editBtn.title = tagEditMode ? '完成编辑' : '管理标签';
+        editBtn.textContent = tagEditMode ? '✓ 完成' : '✏️';
+        editBtn.onclick = toggleTagEditMode;
+        container.appendChild(editBtn);
+
+        // 新增按钮（编辑模式下显示）
+        if (tagEditMode) {
+            const addBtn = document.createElement('button');
+            addBtn.className = 'ai-chat-add-tag';
+            addBtn.id = 'tagAddBtn';
+            addBtn.innerHTML = '＋ 添加';
+            addBtn.onclick = (e) => { e.stopPropagation(); toggleTagPopup(); };
+            container.appendChild(addBtn);
+
+            // 弹窗
+            const popup = document.createElement('div');
+            popup.className = 'tag-add-popup';
+            popup.id = 'tagAddPopup';
+            popup.innerHTML = `
+                <div class="tag-add-popup-title">添加快捷标签</div>
+                <div class="tag-add-row">
+                    <input class="tag-add-input" id="tagLabelInput" placeholder="标签名 如：翻译文本🌐" maxlength="20" />
+                </div>
+                <div class="tag-add-row">
+                    <input class="tag-add-input" id="tagPromptInput" placeholder="发送给AI的内容" />
+                    <button class="tag-add-confirm" onclick="confirmAddTag()">添加</button>
+                </div>
+                <div class="tag-add-hint">标签名支持 emoji，提示词是点击后发给AI的内容</div>`;
+            container.appendChild(popup);
+        }
+
+        if (tagEditMode) container.classList.add('edit-mode');
+        else container.classList.remove('edit-mode');
+    }
+
+    function toggleTagEditMode() {
+        tagEditMode = !tagEditMode;
+        renderSuggestionTags();
+    }
+
+    function toggleTagPopup() {
+        const p = document.getElementById('tagAddPopup');
+        if (!p) return;
+        p.classList.toggle('show');
+        if (p.classList.contains('show')) {
+            setTimeout(() => document.getElementById('tagLabelInput')?.focus(), 50);
+        }
+    }
+
+    function confirmAddTag() {
+        const label  = document.getElementById('tagLabelInput')?.value.trim();
+        const prompt = document.getElementById('tagPromptInput')?.value.trim();
+        if (!label || !prompt) { alert('请填写标签名和提示词'); return; }
+        const arr = loadSuggestions();
+        arr.push({ label, prompt });
+        saveSuggestions(arr);
+        renderSuggestionTags();
+        // 重新打开弹窗让用户继续添加
+        setTimeout(() => {
+            const p = document.getElementById('tagAddPopup');
+            if (p) p.classList.add('show');
+        }, 50);
+    }
+
+    function deleteSuggestionTag(e, index) {
+        e.stopPropagation();
+        const arr = loadSuggestions();
+        arr.splice(index, 1);
+        saveSuggestions(arr);
+        renderSuggestionTags();
+    }
+
+    // 点击弹窗外关闭
+    document.addEventListener('click', (e) => {
+        const popup = document.getElementById('tagAddPopup');
+        const addBtn = document.getElementById('tagAddBtn');
+        if (popup && popup.classList.contains('show') &&
+            !popup.contains(e.target) && e.target !== addBtn) {
+            popup.classList.remove('show');
+        }
+    });
 
     function sendSuggestion(text) {
         document.getElementById('aiChatInput').value = text;
@@ -5026,6 +6206,8 @@
         `;
         msgs.appendChild(div);
         msgs.scrollTop = msgs.scrollHeight;
+        // 同步到独立输出面板
+        if (aiOutputOpen) syncOutputMessages();
         return div;
     }
 
@@ -5374,13 +6556,174 @@
     }
 
     function openApiModal() {
-        renderApiProviderList();
-        openModal('apiModal');
+        openApiSettingsPanel();
+    }
+
+    let apiSelectedProvider = null;
+
+    function openApiSettingsPanel() {
+        panelMode = 'api';
+
+        const inPanel  = document.getElementById('aiChatPanel');
+        const outPanel = document.getElementById('aiOutputPanel');
+
+        // 输入面板：api输入模式
+        inPanel.classList.add('compact-mode', 'open', 'api-input-mode');
+        document.getElementById('aiChatToggleIcon').textContent = '✕';
+        aiChatOpen = true;
+        aiChatMode = 'compact';
+
+        // 把 footer 内容替换为 API 输入表单
+        const footer = inPanel.querySelector('.ai-chat-footer');
+        footer.innerHTML = '<div class="api-input-panel-body" id="apiInputPanelBody"><div class="api-warn-tip">⚠️ 密钥仅保存在本地浏览器，请勿在公共设备使用</div><div style="font-size:12px;color:#a0aec0;text-align:center;padding:8px 0;">← 点击左侧选择一个 AI 提供商</div></div>';
+
+        // 输出面板：api 模式
+        outPanel.classList.add('api-mode', 'open');
+        aiOutputOpen = true;
+        outPanel.querySelector('.ai-output-header-title').textContent = 'API 密钥管理';
+        document.getElementById('aiOutputSub').textContent = '选择提供商配置密钥';
+
+        const msgArea = document.getElementById('aiOutputMessages');
+        msgArea.innerHTML = '<div class="api-panel-list" id="apiPanelList"></div>';
+        renderApiPanelList();
+
+        // 吸附定位
+        requestAnimationFrame(() => {
+            const ir = inPanel.getBoundingClientRect();
+            outPanel.style.left   = ir.left + 'px';
+            outPanel.style.width  = ir.width + 'px';
+            outPanel.style.top    = (ir.top - outPanel.offsetHeight - 6) + 'px';
+            outPanel.style.bottom = 'auto';
+            outPanel.style.right  = 'auto';
+            outPanel.classList.add('snapped');
+            inPanel.classList.add('snap-host');
+            isSnapped = true;
+        });
+    }
+
+    function closeApiSettingsPanel() {
+        panelMode = 'chat';
+        const inPanel  = document.getElementById('aiChatPanel');
+        const outPanel = document.getElementById('aiOutputPanel');
+        inPanel.classList.remove('api-input-mode');
+        outPanel.classList.remove('api-mode');
+        outPanel.querySelector('.ai-output-header-title').textContent = 'AI 对话输出';
+        document.getElementById('aiOutputSub').textContent = '拖拽移动 · 靠近输入框可吸附';
+        // 恢复 footer
+        const footer = inPanel.querySelector('.ai-chat-footer');
+        footer.innerHTML = `<div class="ai-chat-input-row">
+            <textarea class="ai-chat-input" id="aiChatInput" placeholder="输入消息，按 Enter 发送..." rows="1"
+                onkeydown="handleAiChatKey(event)" oninput="autoResizeAiInput(this)"></textarea>
+            <button class="ai-chat-send" id="aiChatSend" onclick="sendAiMessage()" title="发送">➤</button>
+        </div>
+        <div class="ai-chat-footer-note">由 Claude AI 提供支持 · Shift+Enter 换行</div>`;
+        apiSelectedProvider = null;
+        toggleAiChat();
+        closeOutputPanel();
+    }
+
+    function renderApiPanelList() {
+        const container = document.getElementById('apiPanelList');
+        if (!container) return;
+        const cfg = loadApiConfig();
+        container.innerHTML = '';
+        API_PROVIDERS.forEach(p => {
+            const hasKey = !!(cfg[p.id] && cfg[p.id].key);
+            const isActive = cfg.active === p.id;
+            const card = document.createElement('div');
+            card.className = 'api-panel-card' + (apiSelectedProvider === p.id ? ' selected' : '');
+            card.innerHTML = `
+                <div class="api-panel-card-logo" style="background:${p.color}22;">${p.logo}</div>
+                <div class="api-panel-card-info">
+                    <div class="api-panel-card-name">${p.name}${isActive ? ' <span style="font-size:10px;color:#48bb78;">✓使用中</span>' : ''}</div>
+                    <div class="api-panel-card-desc">${p.desc}</div>
+                </div>
+                <span class="api-panel-card-status ${hasKey ? 'ok' : 'no'}">${hasKey ? '已配置' : '未配置'}</span>
+            `;
+            card.onclick = () => selectApiProvider(p.id);
+            container.appendChild(card);
+        });
+    }
+
+    function selectApiProvider(id) {
+        apiSelectedProvider = id;
+        renderApiPanelList();
+        const cfg = loadApiConfig();
+        const p   = API_PROVIDERS.find(x => x.id === id);
+        const pCfg = cfg[id] || {};
+        const isActive = cfg.active === id;
+        const hasKey = !!pCfg.key;
+        const selectedModel = pCfg.model || p.models[0].id;
+        const modelOptions = p.models.map(m =>
+            `<option value="${m.id}" ${selectedModel === m.id ? 'selected' : ''}>${m.label}</option>`
+        ).join('');
+        const body = document.getElementById('apiInputPanelBody');
+        if (!body) return;
+        body.innerHTML = `
+            <div class="api-input-panel-provider">${p.logo} ${p.name}
+                <a href="${p.docsUrl}" target="_blank" style="font-size:11px;color:#a0aec0;font-weight:400;margin-left:auto;">获取密钥 ↗</a>
+            </div>
+            <div>
+                <div class="api-input-panel-label">API Key</div>
+                <div class="api-input-panel-row">
+                    <input class="api-key-input" type="password" id="apiPanelKeyInput"
+                        placeholder="${p.placeholder}" value="${pCfg.key || ''}" style="flex:1;">
+                    <button class="api-toggle-eye" onclick="toggleApiPanelKeyVisibility()" title="显示/隐藏">👁</button>
+                </div>
+            </div>
+            <div>
+                <div class="api-input-panel-label">模型</div>
+                <select class="api-model-select" id="apiPanelModelSelect" style="margin-bottom:0;">${modelOptions}</select>
+            </div>
+            <div class="api-input-panel-actions">
+                <button class="api-panel-btn api-panel-btn-save" id="apiPanelSaveBtn" onclick="saveApiPanelKey('${id}')">💾 保存</button>
+                <button class="api-panel-btn api-panel-btn-use ${isActive ? 'in-use' : ''}" onclick="setActiveProvider('${id}');renderApiPanelList();">
+                    ${isActive ? '✓ 使用中' : '▶ 设为当前'}
+                </button>
+                ${hasKey ? `<button class="api-panel-btn api-panel-btn-clear" onclick="clearApiPanelKey('${id}')">🗑</button>` : ''}
+            </div>
+            <div class="api-warn-tip">⚠️ 密钥仅保存在本地浏览器，请勿在公共设备使用</div>
+        `;
+    }
+
+    function toggleApiPanelKeyVisibility() {
+        const inp = document.getElementById('apiPanelKeyInput');
+        if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function saveApiPanelKey(id) {
+        const keyInput   = document.getElementById('apiPanelKeyInput');
+        const modelSelect = document.getElementById('apiPanelModelSelect');
+        if (!keyInput) return;
+        const key = keyInput.value.trim();
+        if (!key) { alert('请输入 API Key'); return; }
+        const model = modelSelect ? modelSelect.value : '';
+        const cfg = loadApiConfig();
+        cfg[id] = { key, model };
+        if (!cfg.active) cfg.active = id;
+        saveApiConfig(cfg);
+        renderApiMiniList();
+        renderApiPanelList();
+        selectApiProvider(id);
+        const btn = document.getElementById('apiPanelSaveBtn');
+        if (btn) { btn.textContent = '✅ 已保存'; setTimeout(() => btn.textContent = '💾 保存', 1500); }
+    }
+
+    function clearApiPanelKey(id) {
+        if (!confirm(`确定要清除 ${API_PROVIDERS.find(p=>p.id===id)?.name} 的 API Key 吗？`)) return;
+        const cfg = loadApiConfig();
+        delete cfg[id];
+        if (cfg.active === id) delete cfg.active;
+        saveApiConfig(cfg);
+        renderApiMiniList();
+        renderApiPanelList();
+        selectApiProvider(id);
     }
 
     // 页面加载后初始化 API 面板
     document.addEventListener('DOMContentLoaded', () => {
         renderApiMiniList();
+        renderSuggestionTags();
         // 更新对话助手状态
         const active = getActiveProvider();
         if (active) {
@@ -5453,6 +6796,182 @@
             document.getElementById('aiChatSend').disabled = false;
         }
     }
+    
+    // ===== 网站推荐 - 复用输入/输出面板 =====
+    let panelMode = 'chat'; // 'chat' | 'recommend'
+    let recActiveCat = '全部';
+
+    function openRecommendPanel() {
+        panelMode = 'recommend';
+
+        // 打开两个面板
+        const inPanel  = document.getElementById('aiChatPanel');
+        const outPanel = document.getElementById('aiOutputPanel');
+
+        // 输入面板：recommend模式（只显示搜索框）
+        inPanel.classList.add('compact-mode', 'open', 'recommend-input-mode');
+        document.getElementById('aiChatToggleIcon').textContent = '✕';
+        aiChatOpen = true;
+        aiChatMode = 'compact';
+
+        // 改输入框占位符 & 发送按钮
+        const inp = document.getElementById('aiChatInput');
+        inp.placeholder = '搜索网站名称或描述...';
+        inp.value = '';
+        inp.oninput = function() { recActiveCat = '全部'; renderRecCatBar(); renderRecList(this.value.trim()); };
+        document.getElementById('aiChatSend').onclick = null;
+        document.getElementById('aiChatSend').title = '搜索';
+        document.getElementById('aiChatSend').textContent = '🔍';
+
+        // 输出面板：recommend模式
+        outPanel.classList.add('recommend-mode', 'open');
+        aiOutputOpen = true;
+        document.getElementById('aiOutputHeader').querySelector('.ai-output-header-title').textContent = '网站推荐';
+        document.getElementById('aiOutputSub').textContent = '点击 ＋ 收藏到导航';
+
+        // 渲染内容
+        const msgArea = document.getElementById('aiOutputMessages');
+        msgArea.innerHTML = `
+            <div class="rec-cat-bar" id="recCatBar"></div>
+            <div class="rec-list"   id="recList"></div>
+        `;
+        renderRecCatBar();
+        renderRecList('');
+
+        // 定位：吸附
+        requestAnimationFrame(() => {
+            const ir = inPanel.getBoundingClientRect();
+            outPanel.style.left   = ir.left + 'px';
+            outPanel.style.width  = ir.width + 'px';
+            outPanel.style.top    = (ir.top - outPanel.offsetHeight - 6) + 'px';
+            outPanel.style.bottom = 'auto';
+            outPanel.style.right  = 'auto';
+            outPanel.classList.add('snapped');
+            inPanel.classList.add('snap-host');
+            isSnapped = true;
+        });
+    }
+
+    function closeRecommendPanel() {
+        panelMode = 'chat';
+        // 恢复输入面板
+        const inPanel = document.getElementById('aiChatPanel');
+        inPanel.classList.remove('recommend-input-mode');
+        const inp = document.getElementById('aiChatInput');
+        inp.placeholder = '输入消息，按 Enter 发送...';
+        inp.value = '';
+        inp.oninput = function() { autoResizeAiInput(this); };
+        const sendBtn = document.getElementById('aiChatSend');
+        sendBtn.onclick = sendAiMessage;
+        sendBtn.title = '发送';
+        sendBtn.textContent = '➤';
+        // 恢复输出面板
+        const outPanel = document.getElementById('aiOutputPanel');
+        outPanel.classList.remove('recommend-mode');
+        document.getElementById('aiOutputHeader').querySelector('.ai-output-header-title').textContent = 'AI 对话输出';
+        document.getElementById('aiOutputSub').textContent = '拖拽移动 · 靠近输入框可吸附';
+        // 关闭两个面板
+        toggleAiChat();
+        closeOutputPanel();
+    }
+
+    function renderRecCatBar() {
+        const bar = document.getElementById('recCatBar');
+        if (!bar) return;
+        const cats = ['全部', ...new Set(RECOMMEND_SITES.map(s => s.cat))];
+        bar.innerHTML = '';
+        cats.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'rec-cat-btn' + (recActiveCat === cat ? ' active' : '');
+            btn.textContent = cat;
+            btn.onclick = () => {
+                recActiveCat = cat;
+                renderRecCatBar();
+                renderRecList(document.getElementById('aiChatInput').value.trim());
+            };
+            bar.appendChild(btn);
+        });
+    }
+
+    function renderRecList(query) {
+        const list = document.getElementById('recList');
+        if (!list) return;
+        const q = (query || '').toLowerCase();
+        let sites = recActiveCat === '全部' ? RECOMMEND_SITES : RECOMMEND_SITES.filter(s => s.cat === recActiveCat);
+        if (q) sites = sites.filter(s => s.name.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q));
+        const existingUrls = new Set((data.links || []).map(l => l.url));
+        list.innerHTML = '';
+        if (sites.length === 0) {
+            list.innerHTML = '<div style="text-align:center;color:#a0aec0;font-size:12px;padding:24px 0;">暂无匹配网站</div>';
+            return;
+        }
+        sites.forEach(site => {
+            const added = existingUrls.has(site.url);
+            const card = document.createElement('div');
+            card.className = 'rec-card';
+            card.innerHTML = `
+                <div class="rec-card-icon">${site.icon}</div>
+                <div class="rec-card-info">
+                    <div class="rec-card-name">${site.name}</div>
+                    <div class="rec-card-desc">${site.desc}</div>
+                </div>
+                <button class="rec-add-btn" ${added ? 'disabled title="已添加"' : 'title="添加到导航"'}
+                    onclick="addRecSite('${site.url}','${site.name}','${site.icon}',this)">
+                    ${added ? '✓' : '＋'}
+                </button>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    function addRecSite(url, name, icon, btn) {
+        if (!data.links) data.links = [];
+        if (data.links.some(l => l.url === url)) return;
+        const groups = data.groups || [];
+        const groupId = groups.length > 0 ? groups[0].id : 1;
+        data.links.push({ id: Date.now(), name, url, favicon: icon, groupId, clicks: 0, createdAt: Date.now() });
+        saveData(); renderLinks();
+        btn.textContent = '✓'; btn.disabled = true;
+    }
+
+    // 覆盖关闭输出面板时，根据当前模式完整关闭
+    const _origCloseOutputPanel = closeOutputPanel;
+    closeOutputPanel = function() {
+        if (panelMode === 'recommend') { closeRecommendPanel(); return; }
+        if (panelMode === 'api')       { closeApiSettingsPanel(); return; }
+        _origCloseOutputPanel();
+    };
+
+    // ===== 网站推荐弹窗（旧，保留兼容） =====
+    const RECOMMEND_SITES = [
+        { name:'ChatGPT',      url:'https://chat.openai.com',        icon:'🤖', cat:'对话AI',  desc:'OpenAI 旗舰对话模型' },
+        { name:'Claude',       url:'https://claude.ai',              icon:'✨', cat:'对话AI',  desc:'Anthropic 智能助手' },
+        { name:'Gemini',       url:'https://gemini.google.com',      icon:'💎', cat:'对话AI',  desc:'Google 多模态 AI' },
+        { name:'DeepSeek',     url:'https://chat.deepseek.com',      icon:'🔍', cat:'对话AI',  desc:'深度求索大模型' },
+        { name:'Kimi',         url:'https://kimi.moonshot.cn',       icon:'🌙', cat:'对话AI',  desc:'月之暗面长文本 AI' },
+        { name:'文心一言',     url:'https://yiyan.baidu.com',        icon:'🌊', cat:'对话AI',  desc:'百度 AI 助手' },
+        { name:'通义千问',     url:'https://tongyi.aliyun.com',      icon:'🧠', cat:'对话AI',  desc:'阿里云大模型' },
+        { name:'Midjourney',   url:'https://midjourney.com',         icon:'🎨', cat:'图像AI',  desc:'顶级 AI 绘画工具' },
+        { name:'Stable Diffusion', url:'https://stability.ai',       icon:'🖼️', cat:'图像AI',  desc:'开源图像生成模型' },
+        { name:'DALL·E',       url:'https://openai.com/dall-e-3',    icon:'🖌️', cat:'图像AI',  desc:'OpenAI 图像生成' },
+        { name:'即梦',         url:'https://jimeng.jianying.com',    icon:'🌈', cat:'图像AI',  desc:'字节跳动 AI 绘图' },
+        { name:'Sora',         url:'https://sora.com',               icon:'🎬', cat:'视频AI',  desc:'OpenAI 视频生成' },
+        { name:'可灵',         url:'https://klingai.com',            icon:'🎥', cat:'视频AI',  desc:'快手 AI 视频生成' },
+        { name:'Runway',       url:'https://runwayml.com',           icon:'🎞️', cat:'视频AI',  desc:'专业 AI 视频工具' },
+        { name:'GitHub Copilot', url:'https://github.com/features/copilot', icon:'👨‍💻', cat:'编程AI', desc:'AI 编程助手' },
+        { name:'Cursor',       url:'https://cursor.sh',              icon:'⌨️', cat:'编程AI',  desc:'AI 驱动代码编辑器' },
+        { name:'v0',           url:'https://v0.dev',                 icon:'🔧', cat:'编程AI',  desc:'Vercel UI 代码生成' },
+        { name:'Bolt',         url:'https://bolt.new',               icon:'⚡', cat:'编程AI',  desc:'AI 全栈应用构建' },
+        { name:'Perplexity',   url:'https://perplexity.ai',          icon:'🔎', cat:'搜索AI',  desc:'AI 实时搜索引擎' },
+        { name:'You.com',      url:'https://you.com',                icon:'🌍', cat:'搜索AI',  desc:'AI 增强搜索' },
+        { name:'Hugging Face', url:'https://huggingface.co',         icon:'🤗', cat:'开发者',  desc:'AI 模型开源社区' },
+        { name:'Replicate',    url:'https://replicate.com',          icon:'♾️', cat:'开发者',  desc:'云端 AI 模型 API' },
+    ];
+
+
+
+
     </script>
+
 </body>
 </html>
